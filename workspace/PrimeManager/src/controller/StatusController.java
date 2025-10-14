@@ -1,6 +1,6 @@
 package controller;
 
-public class SeatController {
+public class StatusController {
 
 	public static void main(String[] args) {
 		
