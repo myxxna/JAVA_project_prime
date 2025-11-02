@@ -1,64 +1,27 @@
 package model;
 
-/**
- * 좌석 정보를 나타내는 모델 클래스.
- */
-public class Seat {
-    private int seatId; // 좌석 ID
-    private String roomNumber; // 방 번호
-    private String seatNumber; // 좌석 번호 (e.g., "A1")
-    private boolean isAvailable; // 예약 가능 여부
+import javafx.beans.property.*;
 
-    public Seat() {
-    }
+public class Seat {
+    private final IntegerProperty seatId;
+    private final StringProperty roomNumber;
+    private final StringProperty seatNumber;
+    private final BooleanProperty isAvailable;
 
     public Seat(int seatId, String roomNumber, String seatNumber, boolean isAvailable) {
-        this.seatId = seatId;
-        this.roomNumber = roomNumber;
-        this.seatNumber = seatNumber;
-        this.isAvailable = isAvailable;
+        this.seatId = new SimpleIntegerProperty(seatId);
+        this.roomNumber = new SimpleStringProperty(roomNumber);
+        this.seatNumber = new SimpleStringProperty(seatNumber);
+        this.isAvailable = new SimpleBooleanProperty(isAvailable);
     }
 
-    // Getters and Setters
-    public int getSeatId() {
-        return seatId;
-    }
+    public int getSeatId() { return seatId.get(); }
+    public String getRoomNumber() { return roomNumber.get(); }
+    public String getSeatNumber() { return seatNumber.get(); }
+    public boolean isAvailable() { return isAvailable.get(); }
 
-    public void setSeatId(int seatId) {
-        this.seatId = seatId;
-    }
-
-    public String getRoomNumber() {
-        return roomNumber;
-    }
-
-    public void setRoomNumber(String roomNumber) {
-        this.roomNumber = roomNumber;
-    }
-
-    public String getSeatNumber() {
-        return seatNumber;
-    }
-
-    public void setSeatNumber(String seatNumber) {
-        this.seatNumber = seatNumber;
-    }
-
-    public boolean isAvailable() {
-        return isAvailable;
-    }
-
-    public void setAvailable(boolean available) {
-        isAvailable = available;
-    }
-
-    @Override
-    public String toString() {
-        return "Seat{" +
-                "seatId=" + seatId +
-                ", roomNumber='" + roomNumber + "'" +
-                ", seatNumber='" + seatNumber + "'" +
-                ", isAvailable=" + isAvailable +
-                '}';
-    }
+    public IntegerProperty seatIdProperty() { return seatId; }
+    public StringProperty roomNumberProperty() { return roomNumber; }
+    public StringProperty seatNumberProperty() { return seatNumber; }
+    public BooleanProperty isAvailableProperty() { return isAvailable; }
 }
