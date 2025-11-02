@@ -1,7 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
 <?import javafx.scene.layout.AnchorPane?>
-<AnchorPane fx:controller="controller.AdminController"
+
+<AnchorPane fx:controller="controller.kiosk.LoginController"
             xmlns:fx="http://javafx.com/fxml"
-            xmlns="http://javafx.com/javafx"
-            prefHeight="400.0" prefWidth="600.0">
-    <!-- UI 요소들 -->
+            prefWidth="400" prefHeight="300">
+
+    <Label text="학번" layoutX="80" layoutY="80"/>
+    <TextField fx:id="studentIdField" layoutX="150" layoutY="75" prefWidth="170"/>
+
+    <Label text="비밀번호" layoutX="80" layoutY="130"/>
+    <PasswordField fx:id="passwordField" layoutX="150" layoutY="125" prefWidth="170"/>
+
+    <Button text="로그인" layoutX="160" layoutY="200" prefWidth="80"
+            onAction="#handleLogin"/>
 </AnchorPane>

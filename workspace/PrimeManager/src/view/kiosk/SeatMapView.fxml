@@ -1,19 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.geometry.*?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.control.Button?>
 
-<VBox spacing="10" alignment="CENTER" xmlns="http://javafx.com/javafx/17.0.1"
-      xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="controller.kiosk.SeatMapController">
+<AnchorPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="controller.kiosk.SeatController"
+            prefWidth="600" prefHeight="400">
 
-    <HBox spacing="10">
-        <Label text="방 선택:"/>
-        <ComboBox fx:id="roomComboBox"/>
-    </HBox>
-
-    <GridPane fx:id="seatGrid" hgap="10" vgap="10" alignment="CENTER"/>
-
-    <Button text="새로고침" onAction="#refreshSeats"/>
-</VBox>
-
+    <Button text="좌석1" layoutX="50" layoutY="50"/>
+    <Button text="좌석2" layoutX="150" layoutY="50"/>
+    <Button text="좌석3" layoutX="250" layoutY="50"/>
+</AnchorPane>
