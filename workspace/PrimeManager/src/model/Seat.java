@@ -3,7 +3,6 @@ package model;
 import javafx.beans.property.*;
 
 public class Seat {
-
     private final IntegerProperty seatId;
     private final StringProperty roomNumber;
     private final StringProperty seatNumber;

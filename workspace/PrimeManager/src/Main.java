@@ -42,6 +42,11 @@ public class Main extends Application {
             System.out.println("조회된 좌석 정보가 없습니다.");
         } else {
             tableView.getItems().addAll(seats);
+            System.out.println("--- 좌석 목록 ---");
+            for (Seat seat : seats) {
+                System.out.println(seat);
+            }
+            System.out.println("-----------------");
         }
 
         VBox root = new VBox(tableView);

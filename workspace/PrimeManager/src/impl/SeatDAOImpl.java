@@ -10,33 +10,30 @@ import java.util.List;
 
 public class SeatDAOImpl implements ISeatDAO {
 
-	@Override
-	public List<Seat> getAllSeats() {
-	    List<Seat> seats = new ArrayList<>();
-	    String query = "SELECT room_number, seat_number FROM seats"; // 기존 id 제거
+    @Override
+    public List<Seat> getAllSeats() {
+        List<Seat> seats = new ArrayList<>();
+        String query = "SELECT seatId, roomNumber, seatNumber, isAvailable FROM Seats";
 
+        try (Connection conn = DBConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
 
-	    try (Connection conn = DBConnection.getConnection();
-	         Statement stmt = conn.createStatement();
-	         ResultSet rs = stmt.executeQuery(query)) {
+            while (rs.next()) {
+                seats.add(new Seat(
+                        rs.getInt("seatId"),
+                        rs.getString("roomNumber"),
+                        rs.getString("seatNumber"),
+                        rs.getBoolean("isAvailable")
+                ));
+            }
 
-	    	while (rs.next()) {
-	    	    seats.add(new Seat(
-	    	        0,  // seatId가 테이블에 없으면 임의로 0 처리
-	    	        rs.getString("room_number"),
-	    	        rs.getString("seat_number"),
-	    	        true // isAvailable 컬럼이 없으면 기본값 true 처리
-	    	    ));
-	    	}
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
 
-
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    }
-
-	    return seats;
-	}
-
+        return seats;
+    }
 
     @Override
     public Seat getSeatById(int seatId) {
