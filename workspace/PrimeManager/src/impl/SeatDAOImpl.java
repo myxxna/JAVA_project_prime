@@ -1,3 +1,4 @@
+
 package impl;
 
 import config.DBConnection;
@@ -87,4 +88,3 @@ public class SeatDAOImpl implements ISeatDAO {
         return false;
     }
 }
-
