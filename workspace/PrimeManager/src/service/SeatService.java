@@ -1,19 +1,18 @@
 package service;
 
-import java.util.List;
-
-import dao.SeatDAO;
+import impl.SeatDAOImpl;
 import model.Seat;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+
+import java.util.List;
 
 public class SeatService {
 
-    private final SeatDAO seatDAO;
+    private SeatDAOImpl seatDAO = new SeatDAOImpl();
 
-    public SeatService() {
-        this.seatDAO = new SeatDAO();
-    }
-
-    public List<Seat> getAllSeats() {
-        return seatDAO.findAllSeats();
+    public ObservableList<Seat> getAllSeatsObservable() {
+        List<Seat> seatList = seatDAO.getAllSeats();
+        return FXCollections.observableArrayList(seatList);
     }
 }

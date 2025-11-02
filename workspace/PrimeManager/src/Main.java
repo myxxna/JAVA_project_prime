@@ -1,25 +1,30 @@
-import java.util.List;
-import dao.SeatDAO;
 import model.Seat;
+import interfaces.ISeatDAO;
+import impl.SeatDAOImpl;
+
+import java.util.List;
 
 public class Main {
 
     public static void main(String[] args) {
         System.out.println("데이터베이스에서 좌석 정보를 조회합니다...");
-        
-        SeatDAO seatDAO = new SeatDAO();
-        // 'seats' 테이블만 조회하는 메소드로 변경합니다.
-        List<Seat> seats = seatDAO.findAllSeats();
+
+        // ISeatDAO 구현체 생성
+        ISeatDAO seatDAO = new SeatDAOImpl();
+
+        // DB에서 모든 좌석 조회
+        List<Seat> seats = seatDAO.getAllSeats();
 
         if (seats.isEmpty()) {
-            System.out.println("조회된 좌석 정보가 없습니다. 'seats' 테이블에 데이터가 있는지 확인해주세요.");
+            System.out.println("조회된 좌석 정보가 없습니다. 'Seats' 테이블에 데이터가 있는지 확인해주세요.");
         } else {
             System.out.println("--- 좌석 목록 ---");
             for (Seat seat : seats) {
-                // Seat.java의 toString() 메소드가 호출됩니다.
+                // Seat.java의 toString() 호출
                 System.out.println(seat);
             }
             System.out.println("-----------------");
         }
     }
 }
+
