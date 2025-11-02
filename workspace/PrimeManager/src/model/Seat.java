@@ -24,4 +24,14 @@ public class Seat {
     public StringProperty roomNumberProperty() { return roomNumber; }
     public StringProperty seatNumberProperty() { return seatNumber; }
     public BooleanProperty isAvailableProperty() { return isAvailable; }
+
+    @Override
+    public String toString() {
+        return "Seat{" +
+                "roomNumber='" + roomNumber.get() + '\'' +
+                ", seatNumber='" + seatNumber.get() + '\'' +
+                ", isAvailable=" + isAvailable.get() +
+                '}';
+    }
 }
+

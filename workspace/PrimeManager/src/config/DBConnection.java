@@ -11,9 +11,9 @@ public class DBConnection {
 
     // 데이터베이스 연결 정보
     // TODO: 이 정보들은 별도의 설정 파일로 분리하는 것이 좋습니다.
-	private static final String DB_URL = "jdbc:mysql://10.0.19.232:3306/prime_db?serverTimezone=UTC";
-	private static final String DB_USER = "root";
-    private static final String DB_PASSWORD = "rkdtpdnd12!@"; // 실제 비밀번호로 변경해야 합니다.
+    private static final String DB_URL = "jdbc:mysql://10.0.19.232:3306/prime_db?serverTimezone=UTC";
+    private static final String DB_USER = "root";
+    private static final String DB_PASSWORD = "rkdtpdnd12!@"; // 실제 비밀번호
 
     /**
      * 데이터베이스 커넥션을 가져옵니다.
@@ -55,3 +55,4 @@ public class DBConnection {
         }
     }
 }
+
