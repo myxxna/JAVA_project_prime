@@ -16,4 +16,5 @@ public class SeatService {
     public boolean reserveSeat(int seatId) {
         return seatDAO.reserveSeat(seatId);
     }
+    
 }

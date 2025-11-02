@@ -18,4 +18,5 @@ public class Seat {
     public String getSeatNumber() { return seatNumber; }
     public boolean isReserved() { return reserved; }
     public void setReserved(boolean reserved) { this.reserved = reserved; }
+    
 }

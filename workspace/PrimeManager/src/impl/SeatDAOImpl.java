@@ -24,6 +24,7 @@ public class SeatDAOImpl implements ISeatDAO {
                         rs.getString("room_number"),
                         rs.getString("seat_number"),
                         true//rs.getBoolean("reserved")
+                        
                 ));
             }
         } catch (SQLException e) {
