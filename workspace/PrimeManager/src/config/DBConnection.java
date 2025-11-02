@@ -4,16 +4,10 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-/**
- * 데이터베이스 연결을 관리하는 클래스.
- */
 public class DBConnection {
-
-    // 데이터베이스 연결 정보
-    // TODO: 이 정보들은 별도의 설정 파일로 분리하는 것이 좋습니다.
-    private static final String DB_URL = "jdbc:mysql://10.0.19.232:3306/prime_db?serverTimezone=UTC";
-    private static final String DB_USER = "root";
-    private static final String DB_PASSWORD = "rkdtpdnd12!@"; // 실제 비밀번호
+	private static final String URL = "jdbc:mysql://localhost:3306/prime_db";
+	private static final String USER = "root"; // MySQL 계정
+    private static final String PASSWORD = "1234"; // MySQL 비밀번호
 
     /**
      * 데이터베이스 커넥션을 가져옵니다.
@@ -55,4 +49,3 @@ public class DBConnection {
         }
     }
 }
-

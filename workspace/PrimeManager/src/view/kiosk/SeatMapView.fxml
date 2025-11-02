@@ -1,21 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.control.Button?>
 
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.VBox?>
+<AnchorPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="controller.kiosk.SeatController"
+            prefWidth="600" prefHeight="400">
 
-<VBox xmlns="http://javafx.com/javafx"
-      xmlns:fx="http://javafx.com/fxml"
-      fx:controller="controller.kiosk.SeatController"
-      spacing="10" alignment="CENTER" prefWidth="500" prefHeight="400">
-
-    <TableView fx:id="seatTableView" prefWidth="480" prefHeight="350">
-        <columns>
-            <TableColumn fx:id="seatIdCol" text="ID" prefWidth="50"/>
-            <TableColumn fx:id="roomCol" text="Room" prefWidth="120"/>
-            <TableColumn fx:id="seatCol" text="Seat" prefWidth="80"/>
-            <TableColumn fx:id="availCol" text="Available" prefWidth="80"/>
-        </columns>
-    </TableView>
-
-</VBox>
-
+    <Button text="좌석1" layoutX="50" layoutY="50"/>
+    <Button text="좌석2" layoutX="150" layoutY="50"/>
+    <Button text="좌석3" layoutX="250" layoutY="50"/>
+</AnchorPane>
