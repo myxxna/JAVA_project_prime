@@ -1,3 +1,4 @@
+
 package interfaces;
 
 import model.Seat;
