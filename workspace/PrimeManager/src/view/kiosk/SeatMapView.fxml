@@ -1,21 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.control.Label?>
 
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.VBox?>
-
-<VBox xmlns="http://javafx.com/javafx"
-      xmlns:fx="http://javafx.com/fxml"
-      fx:controller="controller.kiosk.SeatController"
-      spacing="10" alignment="CENTER" prefWidth="500" prefHeight="400">
-
-    <TableView fx:id="seatTableView" prefWidth="480" prefHeight="350">
-        <columns>
-            <TableColumn fx:id="seatIdCol" text="ID" prefWidth="50"/>
-            <TableColumn fx:id="roomCol" text="Room" prefWidth="120"/>
-            <TableColumn fx:id="seatCol" text="Seat" prefWidth="80"/>
-            <TableColumn fx:id="availCol" text="Available" prefWidth="80"/>
-        </columns>
-    </TableView>
-
-</VBox>
-
+<AnchorPane fx:controller="controller.kiosk.SeatController"
+            xmlns:fx="http://javafx.com/fxml/1"
+            xmlns="http://javafx.com/javafx/21"
+            prefHeight="400.0" prefWidth="600.0">
+            
+    <Label layoutX="150.0" layoutY="150.0" text="키오스크 화면 로드 성공 (SeatController)" />
+            
+</AnchorPane>
