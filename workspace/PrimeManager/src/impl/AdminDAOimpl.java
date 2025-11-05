@@ -8,11 +8,13 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.LocalDateTime; // (★필수★)
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 public class AdminDAOimpl {
+
+    // --- 층/방 목록 조회 메서드 (수정 없음) ---
 
     public List<Integer> getUniqueFloors() {
         List<Integer> floors = new ArrayList<>();
@@ -64,12 +66,22 @@ public class AdminDAOimpl {
         return roomNames;
     }
 
+    // --- 좌석 상태 조회 메서드 (수정 완료) ---
+    
     public List<Seat> getAllSeatStatusByRoom(String roomName) {
         List<Seat> seatList = new ArrayList<>();
-        String sql = "SELECT * FROM seats WHERE room_index = ? ORDER BY seat_number"; 
+        
+        // ★수정: users 테이블과 LEFT JOIN하여 u.name(사용자 이름)을 가져옵니다. 
+        // ★수정: JOIN 조건에서 CAST를 제거하고 INT 타입으로 직접 비교합니다.
+        String sql = "SELECT s.*, u.name AS actual_user_name " + 
+                     "FROM seats s " +
+                     "LEFT JOIN users u ON s.current_user_id = u.id " + 
+                     "WHERE s.room_index = ? ORDER BY s.seat_number"; 
+                     
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, roomName); 
+            
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
                     Seat seat = new Seat();
@@ -78,14 +90,21 @@ public class AdminDAOimpl {
                     seat.setRoomNumber(rs.getString("room_index")); 
                     seat.setSeatIndex(rs.getInt("seat_index"));
                     seat.setSeatNumber(rs.getString("seat_number"));
-                    seat.setStatus(rs.getString("status")); 
+                    
+                    // DB에서 가져온 상태값을 반각 대문자로 정규화
+                    String statusFromDB = rs.getString("status");
+                    seat.setStatus(normalizeStatus(statusFromDB)); 
+                    
                     int currentUserId = rs.getInt("current_user_id");
                     if (rs.wasNull()) {
                         seat.setCurrentUserId(null); 
+                        seat.setCurrentUserName(null); 
                     } else {
                         seat.setCurrentUserId(currentUserId);
+                        // ★수정: JOIN으로 가져온 실제 사용자 이름 사용
+                        seat.setCurrentUserName(rs.getString("actual_user_name"));
                     }
-                    seat.setCurrentUserName(rs.getString("current_user_name"));
+                    
                     java.sql.Timestamp startTime = rs.getTimestamp("start_time");
                     if (startTime != null) {
                         seat.setStartTime(startTime.toLocalDateTime());
@@ -101,19 +120,18 @@ public class AdminDAOimpl {
                     seatList.add(seat);
                 }
             }
-        } catch (SQLException e) { e.printStackTrace(); }
+        } catch (SQLException e) { 
+            System.out.println("getAllSeatStatusByRoom 중 DB 오류 발생");
+            e.printStackTrace(); 
+        }
         return seatList;
     }
     
-    public boolean addPenalty(Penalty penalty) {
-        // (★주의★) 이 메서드는 '이전' Penalty 모델을 사용하고 있을 수 있습니다.
-        // 지금은 '신고 목록 조회'만 구현하므로 이 메서드는 수정하지 않습니다.
-        // ... (이전 코드)
-        return false;
-    }
-    
+    // --- 유저 퇴출 메서드 (수정 완료) ---
+
     public boolean ejectUserFromSeat(int userId) {
-        String sql = "UPDATE seats SET status = 'Ｅ', current_user_id = NULL, " +
+        // ★수정: 전각 문자 'Ｅ' 대신 반각 문자 'E'를 사용합니다.
+        String sql = "UPDATE seats SET status = 'E', current_user_id = NULL, " +
                      "current_user_name = NULL, " + 
                      "start_time = NULL, end_time = NULL WHERE current_user_id = ?";
         try (Connection conn = DBConnection.getConnection();
@@ -128,12 +146,17 @@ public class AdminDAOimpl {
         }
     }
     
+    // --- 좌석 상태 설정 메서드 (수정 완료) ---
+
     public boolean setSeatStatus(int seatId, String newStatus) {
         String sql = "UPDATE seats SET status = ? WHERE id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
-            pstmt.setString(1, newStatus); 
+            // ★수정: 입력된 상태값을 반각 대문자로 정규화하여 저장합니다.
+            String normalizedStatus = normalizeStatus(newStatus); 
+                                     
+            pstmt.setString(1, normalizedStatus); 
             pstmt.setInt(2, seatId);
             
             int rowsAffected = pstmt.executeUpdate();
@@ -145,14 +168,31 @@ public class AdminDAOimpl {
             return false;
         }
     }
+    
+    // --- 헬퍼 메서드 추가 (전각 문자를 반각 대문자로 변환) ---
+    
+    private String normalizeStatus(String status) {
+        if (status == null || status.isEmpty()) {
+            return "G"; // 기본값 (공석)
+        }
+        // 전각 문자를 반각 문자로 대체 후, 전체를 대문자로 변환
+        return status.trim().toUpperCase()
+                     .replace('Ｒ', 'R')
+                     .replace('Ｇ', 'G')
+                     .replace('Ｅ', 'E')
+                     .replace('Ｃ', 'C');
+    }
+    
+    // --- 페널티 관련 메서드 (수정 없음) ---
+    
+    public boolean addPenalty(Penalty penalty) {
+        // ... (이전 코드)
+        return false;
+    }
 
-    /**
-     * (★신규★) '신고 목록' 탭에 보여줄 'penalty' 테이블의 모든 데이터를 가져옵니다.
-     * @return Penalty 객체 리스트
-     */
     public List<Penalty> getAllPenalties() {
         List<Penalty> penaltyList = new ArrayList<>();
-        String sql = "SELECT * FROM penalty ORDER BY report_time DESC"; // 최신순 정렬
+        String sql = "SELECT * FROM penalty ORDER BY report_time DESC"; 
         
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
