@@ -1,4 +1,3 @@
-
 package impl;
 
 import config.DBConnection;
@@ -21,16 +20,33 @@ public class SeatDAOImpl implements ISeatDAO {
              ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
-                seats.add(new Seat(
-                        rs.getInt("id"),
-                        rs.getString("room_number"),
-                        rs.getString("seat_number"),
-                        rs.getBoolean("reserved"),
-                        rs.getString("status"),
-                        rs.getInt("user_id"),
-                        rs.getTimestamp("start_time") != null ? rs.getTimestamp("start_time").toLocalDateTime() : null,
-                        rs.getTimestamp("end_time") != null ? rs.getTimestamp("end_time").toLocalDateTime() : null
-                ));
+                // (★수정★) 생성자가 아닌 Setter를 사용
+                Seat seat = new Seat();
+                seat.setId(rs.getInt("id"));
+                seat.setFloor(rs.getInt("floor"));
+                seat.setRoomNumber(rs.getString("room_index")); // (★수정★) room_number -> room_index
+                seat.setSeatIndex(rs.getInt("seat_index"));
+                seat.setSeatNumber(rs.getString("seat_number"));
+                seat.setStatus(rs.getString("status"));
+                
+                int userId = rs.getInt("current_user_id"); // (★수정★) user_id -> current_user_id
+                if (rs.wasNull()) {
+                    seat.setCurrentUserId(null);
+                } else {
+                    seat.setCurrentUserId(userId);
+                }
+                
+                seat.setCurrentUserName(rs.getString("current_user_name"));
+
+                java.sql.Timestamp startTime = rs.getTimestamp("start_time");
+                seat.setStartTime(startTime != null ? startTime.toLocalDateTime() : null);
+                
+                java.sql.Timestamp endTime = rs.getTimestamp("end_time");
+                seat.setEndTime(endTime != null ? endTime.toLocalDateTime() : null);
+                
+                // (★수정★) rs.getBoolean("reserved") 삭제
+                
+                seats.add(seat);
             }
 
         } catch (SQLException e) {
@@ -48,16 +64,33 @@ public class SeatDAOImpl implements ISeatDAO {
             pstmt.setInt(1, id);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    return new Seat(
-                            rs.getInt("id"),
-                            rs.getString("room_number"),
-                            rs.getString("seat_number"),
-                            rs.getBoolean("reserved"),
-                            rs.getString("status"),
-                            rs.getInt("user_id"),
-                            rs.getTimestamp("start_time") != null ? rs.getTimestamp("start_time").toLocalDateTime() : null,
-                            rs.getTimestamp("end_time") != null ? rs.getTimestamp("end_time").toLocalDateTime() : null
-                    );
+                    // (★수정★) 생성자가 아닌 Setter를 사용
+                    Seat seat = new Seat();
+                    seat.setId(rs.getInt("id"));
+                    seat.setFloor(rs.getInt("floor"));
+                    seat.setRoomNumber(rs.getString("room_index")); // (★수정★) room_number -> room_index
+                    seat.setSeatIndex(rs.getInt("seat_index"));
+                    seat.setSeatNumber(rs.getString("seat_number"));
+                    seat.setStatus(rs.getString("status"));
+                    
+                    int userId = rs.getInt("current_user_id"); // (★수정★) user_id -> current_user_id
+                    if (rs.wasNull()) {
+                        seat.setCurrentUserId(null);
+                    } else {
+                        seat.setCurrentUserId(userId);
+                    }
+                    
+                    seat.setCurrentUserName(rs.getString("current_user_name"));
+    
+                    java.sql.Timestamp startTime = rs.getTimestamp("start_time");
+                    seat.setStartTime(startTime != null ? startTime.toLocalDateTime() : null);
+                    
+                    java.sql.Timestamp endTime = rs.getTimestamp("end_time");
+                    seat.setEndTime(endTime != null ? endTime.toLocalDateTime() : null);
+                    
+                    // (★수정★) rs.getBoolean("reserved") 삭제
+                    
+                    return seat;
                 }
             }
 
@@ -69,15 +102,35 @@ public class SeatDAOImpl implements ISeatDAO {
 
     @Override
     public boolean updateSeat(Seat seat) {
-        String sql = "UPDATE seats SET reserved=?, status=?, user_id=?, start_time=?, end_time=? WHERE id=?";
+        // (★수정★) SeatService가 변경하는 컬럼들만 업데이트
+        String sql = "UPDATE seats SET status=?, current_user_id=?, current_user_name=?, start_time=?, end_time=? WHERE id=?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setBoolean(1, seat.isReserved());
-            pstmt.setString(2, seat.getStatus());
-            pstmt.setInt(3, seat.getCurrentUserId());
-            pstmt.setTimestamp(4, seat.getStartTime() != null ? Timestamp.valueOf(seat.getStartTime()) : null);
-            pstmt.setTimestamp(5, seat.getEndTime() != null ? Timestamp.valueOf(seat.getEndTime()) : null);
+            pstmt.setString(1, seat.getStatus());
+            
+            // Integer (nullable)
+            if (seat.getCurrentUserId() == null) {
+                pstmt.setNull(2, java.sql.Types.INTEGER);
+            } else {
+                pstmt.setInt(2, seat.getCurrentUserId());
+            }
+            
+            pstmt.setString(3, seat.getCurrentUserName());
+            
+            // LocalDateTime (nullable)
+            if (seat.getStartTime() != null) {
+                pstmt.setTimestamp(4, Timestamp.valueOf(seat.getStartTime()));
+            } else {
+                pstmt.setNull(4, java.sql.Types.TIMESTAMP);
+            }
+            
+            if (seat.getEndTime() != null) {
+                pstmt.setTimestamp(5, Timestamp.valueOf(seat.getEndTime()));
+            } else {
+                pstmt.setNull(5, java.sql.Types.TIMESTAMP);
+            }
+            
             pstmt.setInt(6, seat.getId());
 
             return pstmt.executeUpdate() > 0;
@@ -88,4 +141,3 @@ public class SeatDAOImpl implements ISeatDAO {
         return false;
     }
 }
-
