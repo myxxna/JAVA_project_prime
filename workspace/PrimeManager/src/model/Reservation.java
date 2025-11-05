@@ -2,55 +2,47 @@ package model;
 
 import java.time.LocalDateTime;
 
-/**
- * 예약 정보를 나타내는 모델 클래스. 사용자와 좌석 간의 관계를 정의합니다.
- */
 public class Reservation {
-    private int reservationId; // 예약 ID
-    private String userId; // 예약한 사용자의 ID
-    private int seatId; // 예약된 좌석의 ID
-    private LocalDateTime reservationTime; // 예약 시간
-
-    public Reservation() {
+    
+    public enum ReservationStatus {
+        PENDING, IN_USE, FINISHED, CANCELED
     }
+    
+    private long reservationId;
+    private String userId;
+    private int seatId;
+    private LocalDateTime startTime;
+    private LocalDateTime expectedEndTime;
+    private LocalDateTime actualEndTime; 
+    private int durationMinutes;
+    private int initialDurationMinutes;
+    private ReservationStatus status;
 
-    public Reservation(int reservationId, String userId, int seatId, LocalDateTime reservationTime) {
-        this.reservationId = reservationId;
+    public Reservation(String userId, int seatId, LocalDateTime startTime, int durationMinutes) {
         this.userId = userId;
         this.seatId = seatId;
-        this.reservationTime = reservationTime;
+        this.startTime = startTime;
+        this.durationMinutes = durationMinutes;
+        this.initialDurationMinutes = durationMinutes; 
+        this.expectedEndTime = startTime.plusMinutes(durationMinutes);
+        this.status = ReservationStatus.PENDING; 
     }
+    
+    // Getter 및 Setter (생략된 부분 포함)
 
-    // Getters and Setters
-    public int getReservationId() {
-        return reservationId;
-    }
-
-    public void setReservationId(int reservationId) {
-        this.reservationId = reservationId;
-    }
-
-    public String getUserId() {
-        return userId;
-    }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
-    public int getSeatId() {
-        return seatId;
-    }
-
-    public void setSeatId(int seatId) {
-        this.seatId = seatId;
-    }
-
-    public LocalDateTime getReservationTime() {
-        return reservationTime;
-    }
-
-    public void setReservationTime(LocalDateTime reservationTime) {
-        this.reservationTime = reservationTime;
-    }
+    public long getReservationId() { return reservationId; }
+    public void setReservationId(long reservationId) { this.reservationId = reservationId; }
+    public String getUserId() { return userId; }
+    public int getSeatId() { return seatId; }
+    public LocalDateTime getStartTime() { return startTime; }
+    public LocalDateTime getExpectedEndTime() { return expectedEndTime; }
+    public void setExpectedEndTime(LocalDateTime expectedEndTime) { this.expectedEndTime = expectedEndTime; }
+    public int getDurationMinutes() { return durationMinutes; }
+    public void setDurationMinutes(int durationMinutes) { this.durationMinutes = durationMinutes; }
+    public int getInitialDurationMinutes() { return initialDurationMinutes; }
+    public void setInitialDurationMinutes(int initialDurationMinutes) { this.initialDurationMinutes = initialDurationMinutes; }
+    public ReservationStatus getStatus() { return status; }
+    public void setStatus(ReservationStatus status) { this.status = status; }
+    public LocalDateTime getActualEndTime() { return actualEndTime; }
+    public void setActualEndTime(LocalDateTime actualEndTime) { this.actualEndTime = actualEndTime; }
 }
