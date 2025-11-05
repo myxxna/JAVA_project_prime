@@ -49,23 +49,6 @@
                        promptText="학번을 입력하세요"
                        style="-fx-pref-width: 300px; -fx-pref-height: 42px; -fx-font-size: 15px;
                               -fx-background-color: #F1F3F5; -fx-background-radius: 8px;" />
-
-            <Label text="비밀번호"
-                   GridPane.columnIndex="0" GridPane.rowIndex="1"
-                   style="-fx-font-weight: bold; -fx-font-size: 16px;" />
-            <PasswordField fx:id="passwordField"
-                           GridPane.columnIndex="1" GridPane.rowIndex="1"
-                           promptText="비밀번호를 입력하세요"
-                           style="-fx-pref-width: 300px; -fx-pref-height: 42px; -fx-font-size: 15px;
-                                  -fx-background-color: #F1F3F5; -fx-background-radius: 8px;" />
-        </GridPane>
-
-        <!-- 완료 버튼 (굵게) -->
-        <Button fx:id="loginButton" onAction="#handleLoginButtonAction" text="완료"
-                style="-fx-background-color: #4C6EF5; -fx-text-fill: white;
-                       -fx-font-weight: bold; -fx-font-size: 16px;
-                       -fx-pref-width: 220px; -fx-pref-height: 44px;
-                       -fx-background-radius: 8px; -fx-cursor: hand;" />
-
-    </VBox>
+         </GridPane>
+	</VBox>
 </StackPane>
