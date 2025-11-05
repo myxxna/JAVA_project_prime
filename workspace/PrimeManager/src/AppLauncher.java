@@ -24,5 +24,4 @@ public class AppLauncher extends Application {
     public static void main(String[] args) {
         launch(args); // JavaFX 앱 시작
     }
-
 }
