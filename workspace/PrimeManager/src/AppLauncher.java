@@ -9,7 +9,6 @@ import java.io.IOException;
 public class AppLauncher extends Application {
 
     @Override
-
     public void start(Stage primaryStage) throws IOException {
         // FXML 경로가 'src/view/kiosk/LoginView.fxml'이라고 가정하고 로드합니다.
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/kiosk/LoginView.fxml"));
@@ -22,7 +21,6 @@ public class AppLauncher extends Application {
     }
 
     public static void main(String[] args) {
-        launch(args); // JavaFX 앱 시작
+        launch(args);
     }
-
 }

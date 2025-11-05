@@ -27,12 +27,18 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import model.User;
 import service.UserService;
-
+import javafx.animation.PauseTransition;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.layout.VBox;
+import javafx.stage.Modality; // 팝업창 모달 설정
+import javafx.scene.control.Label;
 
 public class LoginController {
     
     // 🛑 [수정] 클래스 레벨 필드 (로그아웃 타이머 관련)
-    private static final int INACTIVITY_TIMEOUT_MS = 10000; // 5분
+
+    private static final int INACTIVITY_TIMEOUT_MS = 300000; // 5분
     private static Timeline logoutTimer;
     private static Stage currentPrimaryStage; 
     private static volatile boolean isLogoutInProgress = false;
@@ -168,47 +174,71 @@ public class LoginController {
         scene.addEventFilter(MouseEvent.ANY, activityHandler); // 마우스 이벤트 (이동, 클릭)
         scene.addEventFilter(KeyEvent.ANY, activityHandler);   // 키보드 이벤트
     }
-
-
+    
+    
     // 🛑 실제 로그아웃 처리 메서드
-    private static void performLogout() {
-    	
-    	if (isLogoutInProgress) {
+private static void performLogout() {
+        
+        if (isLogoutInProgress) {
             return; 
         }
         isLogoutInProgress = true;
+        
         // 1. 타이머 중지 및 세션 정보 초기화
         if (logoutTimer != null) {
             logoutTimer.stop();
         }
-        currentUser = null; // 세션 정보(User 객체) 초기화
+        currentUser = null; 
+
+        // 2. UI 작업은 Platform.runLater 내부에서 처리
         Platform.runLater(() -> {
-        // 2. 경고창 표시
-        Alert alert = new Alert(AlertType.WARNING);
-        alert.setTitle("자동 로그아웃");
-        alert.setHeaderText("비활성화로 인한 자동 로그아웃");
-        alert.setContentText("5분 이상 활동이 없어 자동으로 로그아웃되었습니다.");
-        alert.showAndWait();
-        
-        // 3. 로그인 화면으로 전환
-        try {
-            // AppLauncher의 FXML 경로를 사용하여 로그인 화면 로드
-            // AppLauncher.class가 LoginController와 다른 패키지에 있다면 import 필요
-        	
-        	FXMLLoader loader = new FXMLLoader(LoginController.class.getResource("/view/kiosk/LoginView.fxml"));
-            Parent root = loader.load();
-            
-            Scene newScene = new Scene(root);
-            currentPrimaryStage.setScene(newScene);
-            currentPrimaryStage.show();
-            
-            // 🛑 로그아웃 후 로그인 화면으로 돌아가므로, 여기서 타이머를 재설정할 필요는 없습니다.
-            
-        } catch (IOException e) {
-        	System.err.println("로그인 화면 로드 실패: AppLauncher 클래스 경로 오류");
-            e.printStackTrace();
-        }
-        
-    });
+            // 🛑 [핵심] try-finally 구조를 사용하여 플래그 해제를 보장합니다.
+            try {
+                // --- 2.1. 팝업 창 생성 (5초 자동 종료 팝업) ---
+                Stage popupStage = new Stage();
+                popupStage.initModality(Modality.APPLICATION_MODAL); 
+                popupStage.setTitle("자동 로그아웃");
+                
+                VBox layout = new VBox(10);
+                layout.setAlignment(Pos.CENTER);
+                layout.setPadding(new Insets(20));
+                layout.getChildren().addAll(
+                    new Label("비활성화로 인해 자동 로그아웃되었습니다."),
+                    new Label("5초 후 로그인 화면으로 돌아갑니다.")
+                );
+                
+                Scene popupScene = new Scene(layout, 350, 150);
+                popupStage.setScene(popupScene);
+                popupStage.show();
+                
+                // --- 2.2. 5초 대기 후 화면 전환 로직 ---
+                PauseTransition delay = new PauseTransition(Duration.seconds(5));
+                delay.setOnFinished(e -> {
+                    try {
+                        popupStage.close(); // 팝업 닫기
+                        
+                        // 로그인 화면 FXML 로드 및 전환
+                        FXMLLoader loader = new FXMLLoader(LoginController.class.getResource("/view/kiosk/LoginView.fxml"));
+                        Parent root = loader.load();
+                        
+                        Scene newScene = new Scene(root);
+                        currentPrimaryStage.setScene(newScene);
+                        currentPrimaryStage.show();
+                        
+                    } catch (IOException ex) {
+                        System.err.println("로그인 화면 로드 중 오류 발생.");
+                        ex.printStackTrace();
+                    }
+                });
+                delay.play();
+                
+            } catch (Exception e) { // IOException 또는 다른 런타임 오류 포착
+                System.err.println("자동 로그아웃 처리 중 치명적 오류 발생.");
+                e.printStackTrace();
+            } finally {
+                // 🛑 [최종] 작업이 끝날 때 플래그 해제 (비동기 완료 후 플래그 해제가 PauseTransition 내부에서 처리되어야 안정적임)
+                // Note: PauseTransition 내부의 finally에서 isLogoutInProgress = false;가 처리됩니다.
+            }
+        });
 }
 }
