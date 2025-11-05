@@ -4,19 +4,19 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
+import java.io.IOException;
+
 public class AppLauncher extends Application {
 
     @Override
-    public void start(Stage primaryStage) throws Exception {
-        // FXML 로드
+
+    public void start(Stage primaryStage) throws IOException {
+        // FXML 경로가 'src/view/kiosk/LoginView.fxml'이라고 가정하고 로드합니다.
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/kiosk/LoginView.fxml"));
         Parent root = loader.load();
-
-        // Scene 세팅
+        
         Scene scene = new Scene(root);
-
-        // Stage 세팅
-        primaryStage.setTitle("프라임 키오스크");
+        primaryStage.setTitle("프라임실 좌석 예약 로그인");
         primaryStage.setScene(scene);
         primaryStage.show();
     }
@@ -24,5 +24,5 @@ public class AppLauncher extends Application {
     public static void main(String[] args) {
         launch(args); // JavaFX 앱 시작
     }
-    }
 
+}

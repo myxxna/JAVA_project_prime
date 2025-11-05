@@ -5,15 +5,32 @@ public class User {
     private String studentId;
     private String name;
     private String email;
+    private String role;
+    private String password;
+    private int penaltyCount;// 👈 관리자 여부를 판단할 필드 추가
 
-    public User(int id, String studentId, String name, String email) {
+    // ✅ UserDAOImpl에서 호출할 새로운 생성자 (5개 필드)
+    public User(int id, int penaltyCount, String studentId, String name, String email, String role, String password) {
         this.id = id;
+        this.penaltyCount = penaltyCount; 
         this.studentId = studentId;
         this.name = name;
         this.email = email;
+        this.role = role;
+        this.password = password;
+        
     }
 
-    // ✅ getter & setter 추가
+    // --- LoginController.java 오류 해결 메서드 ---
+    /**
+     * LoginController.java 오류 해결: 사용자가 관리자 권한을 가졌는지 확인하는 메서드
+     */
+    public boolean isAdmin() {
+        // 'role' 필드의 값이 "ADMIN" (대소문자 무시)인지 확인하여 관리자 여부를 판단합니다.
+        return this.role != null && this.role.toUpperCase().equals("ADMIN");
+    }
+    
+    // --- Getters and Setters ---
     public int getId() {
         return id;
     }
@@ -45,4 +62,28 @@ public class User {
     public void setEmail(String email) {
         this.email = email;
     }
+    
+    public String getRole() { // 👈 role 필드에 대한 Getter
+        return role;
+    }
+
+    public void setRole(String role) { // 👈 role 필드에 대한 Setter
+        this.role = role;
+    }
+    public String getPassword() { // 👈 password Getter 추가
+        return password;
+    }
+
+    public void setPassword(String password) { // 👈 password Setter 추가
+        this.password = password;
+    }
+    public int getPenaltyCount() {
+        return penaltyCount;
+    }
+
+    public void setPenaltyCount(int penaltyCounAt) {
+        this.penaltyCount = penaltyCount;
+    }
+
+
 }
