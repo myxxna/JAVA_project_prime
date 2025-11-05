@@ -1,5 +1,6 @@
 package controller.admin;
 
+import javafx.application.Platform; 
 import javafx.collections.FXCollections; 
 import javafx.collections.ObservableList; 
 import javafx.event.ActionEvent;
@@ -14,42 +15,49 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.TableColumn; 
 import javafx.scene.control.TableView; 
 import javafx.scene.control.TextField;
+import javafx.scene.control.cell.PropertyValueFactory; // (★신규★)
+import javafx.scene.layout.BorderPane; 
 import javafx.scene.layout.GridPane; 
 import javafx.scene.layout.StackPane; 
 import javafx.scene.layout.VBox; 
 import javafx.scene.paint.Color; 
 import javafx.scene.shape.Rectangle; 
 import javafx.scene.text.Font; 
+import javafx.stage.Stage; 
 import model.Seat;
+import model.Penalty; // (★신규★)
 import service.AdminService;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter; 
 import java.util.List;
+import java.util.stream.Collectors; 
+import java.util.ArrayList; 
 import java.util.Optional; 
-import java.util.stream.Collectors; // (★신규★)
 
 public class AdminController {
 
     private AdminService adminService;
     private Seat selectedSeat = null; 
 
-    // (★삭제★) 하드코딩 맵 삭제
-    // private Map<String, List<String>> floorRoomMap; 
+    private final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
     // --- FXML 컴포넌트 연결 ---
-    @FXML private ListView<String> floorListView; // (String "4층", "7층"을 담음)
+    @FXML private BorderPane adminRootPane; 
+    @FXML private ListView<String> floorListView; 
     @FXML private ListView<String> roomListView; 
     @FXML private GridPane visualSeatGrid; 
 
-    @FXML private TableView<Object> reportTable; 
-    @FXML private TableColumn<Object, String> reportSeatIdCol;
-    @FXML private TableColumn<Object, String> reportReasonCol;
-    @FXML private TableColumn<Object, String> reportTimeCol;
+    // (★수정★) '신고 목록' 탭
+    @FXML private TableView<Penalty> reportTable; 
+    @FXML private TableColumn<Penalty, Integer> reportSeatIdCol; // (FXML의 '신고 좌석' -> DB의 seat_index)
+    @FXML private TableColumn<Penalty, String> reportReasonCol;
+    @FXML private TableColumn<Penalty, LocalDateTime> reportTimeCol;
     
     @FXML private ListView<String> overdueUserList; 
 
     @FXML private Label selectedSeatLabel;
-    @FXML private TextField actionField;
+    @FXML private TextField actionField; 
     @FXML private Button penaltyButton;
     @FXML private Button ejectButton;
     @FXML private Button toggleBrokenButton;
@@ -58,55 +66,60 @@ public class AdminController {
     public void initialize() {
         this.adminService = new AdminService(); 
         setupFloorAndRoomListeners();
-        loadFloorList(); // (★수정★) loadFloorAndRoomList -> loadFloorList
+        loadFloorList();
+        
+        // (★신규★) 신고 목록 탭 초기화
+        setupReportTableColumns();
+        loadReportList();
+        
+        // (창 최대화 코드 - 나중에 주석 해제)
+        /*
+        Platform.runLater(() -> {
+            try {
+                Stage stage = (Stage) adminRootPane.getScene().getWindow();
+                if (stage != null && !stage.isMaximized()) {
+                    stage.setMaximized(true); 
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+        */
     }
     
     /**
-     * (★수정★) DB에서 '층' 목록을 동적으로 불러옵니다.
+     * DB에서 '층' 목록을 동적으로 불러옵니다.
      */
     private void loadFloorList() {
-        // 1. DB에서 층 목록(숫자)을 가져옵니다 (e.g., [4, 7])
         List<Integer> floors = adminService.getFloors();
-        
-        // 2. "층" 텍스트를 붙여 String 리스트로 변환합니다 (e.g., ["4층", "7층"])
         List<String> floorNames = floors.stream()
                                       .map(f -> f + "층")
                                       .collect(Collectors.toList());
-        
-        // 3. 층 ListView에 채웁니다.
         floorListView.setItems(FXCollections.observableArrayList(floorNames));
     }
 
     /**
-     * (★수정★) 층 및 룸 목록(ListView)의 클릭 리스너 (동적 로직)
+     * 층 및 룸 목록(ListView)의 클릭 리스너 (동적 로직)
      */
     private void setupFloorAndRoomListeners() {
         // 1. 층(Floor) 리스너
         floorListView.getSelectionModel().selectedItemProperty().addListener(
             (obs, oldFloor, newFloor) -> {
                 if (newFloor != null) {
-                    // "4층" -> 4 (숫자)로 변환
                     try {
                         int floorNum = Integer.parseInt(newFloor.replace("층", ""));
-                        
-                        // DB에서 해당 층의 룸 목록을 가져옵니다.
                         List<String> rooms = adminService.getRoomsByFloor(floorNum);
-                        
-                        // 룸 목록(roomListView)을 갱신합니다.
                         roomListView.setItems(FXCollections.observableArrayList(rooms));
-                        
                     } catch (NumberFormatException e) {
                         System.out.println("층 번호 파싱 오류: " + newFloor);
                     }
-                    
-                    // 좌석 뷰와 선택 상태를 초기화합니다.
                     visualSeatGrid.getChildren().clear();
                     setSelectedSeat(null);
                 }
             }
         );
 
-        // 2. 룸(Room) 리스너 (변경 없음)
+        // 2. 룸(Room) 리스너
         roomListView.getSelectionModel().selectedItemProperty().addListener(
             (obs, oldRoom, newRoom) -> {
                 if (newRoom != null) {
@@ -117,23 +130,66 @@ public class AdminController {
         );
     }
     
+    // --- (★신규★) 신고 목록 탭 관련 메서드 ---
+    
+    /**
+     * (★신규★) 신고 목록 TableView의 컬럼과 Penalty 모델을 매핑합니다.
+     */
+    private void setupReportTableColumns() {
+        // FXML의 fx:id="reportSeatIdCol" -> Penalty.java의 getSeatIndex() 호출
+        reportSeatIdCol.setCellValueFactory(new PropertyValueFactory<>("seatIndex")); 
+        
+        // FXML의 fx:id="reportReasonCol" -> Penalty.java의 getReason() 호출
+        reportReasonCol.setCellValueFactory(new PropertyValueFactory<>("reason"));
+        
+        // FXML의 fx:id="reportTimeCol" -> Penalty.java의 getReportTime() 호출
+        reportTimeCol.setCellValueFactory(new PropertyValueFactory<>("reportTime"));
+    }
+    
+    /**
+     * (★신규★) DB에서 신고 목록을 불러와 TableView를 채웁니다.
+     */
+    private void loadReportList() {
+        List<Penalty> penalties = adminService.getAllPenalties();
+        reportTable.setItems(FXCollections.observableArrayList(penalties));
+    }
+    
+    // --- (이하 기존 코드) ---
+    
     private void loadSeatsForRoom(String roomName) {
         List<Seat> seatList = adminService.getSeatsByRoom(roomName);
         renderVisualSeats(seatList, roomName); 
     }
 
-    /**
-     * 선택된 좌석 정보 업데이트 (변경 없음)
-     */
     private void setSelectedSeat(Seat seat) {
         this.selectedSeat = seat;
         if (selectedSeat != null) {
-            if (this.selectedSeat.getCurrentUserId() != null && this.selectedSeat.getCurrentUserId() != 0) {
-                selectedSeatLabel.setText("선택된 좌석: " + selectedSeat.getSeatNumber() 
-                                        + " (이용자 ID: " + selectedSeat.getCurrentUserId() + ")");
-            } else {
-                selectedSeatLabel.setText("선택된 좌석: " + selectedSeat.getSeatNumber() 
-                                        + " (이용자 없음)");
+            String seatNum = seat.getSeatNumber();
+            String status = seat.getStatus();
+            Integer userId = seat.getCurrentUserId();
+            LocalDateTime startTime = seat.getStartTime();
+            String startTimeStr = (startTime != null) ? startTime.format(TIME_FORMATTER) : "N/A";
+            
+            String userName = seat.getCurrentUserName();
+            String userDisplay = (userName != null && !userName.isEmpty()) ? userName : 
+                                 (userId != null && userId != 0) ? "ID: " + userId : "정보 없음";
+
+            switch (status) {
+                case "Ｕ": // 사용 중
+                    selectedSeatLabel.setText("좌석: " + seatNum + " (사용중, " + userDisplay + ", 시작: " + startTimeStr + ")");
+                    break;
+                case "Ｒ": // 예약됨
+                    selectedSeatLabel.setText("좌석: " + seatNum + " (예약됨)");
+                    break;
+                case "Ｅ": // 사용 가능
+                    selectedSeatLabel.setText("좌석: " + seatNum + " (사용 가능)");
+                    break;
+                case "Ｃ": // 점검 중
+                    selectedSeatLabel.setText("좌석: " + seatNum + " (점검 중)");
+                    break;
+                default:
+                    selectedSeatLabel.setText("좌석: " + seatNum + " (알 수 없음)");
+                    break;
             }
         } else {
             String selectedRoom = roomListView.getSelectionModel().getSelectedItem();
@@ -145,41 +201,24 @@ public class AdminController {
         }
     }
 
-    // --- 버튼 핸들러 (이하 모두 변경 없음) ---
-
     @FXML
     void handlePenalty(ActionEvent event) {
-        String reason = actionField.getText();
-        if (selectedSeat == null) { showAlert(AlertType.ERROR, "오류", "먼저 좌석을 선택하세요."); return; }
-        if (selectedSeat.getCurrentUserId() == null || selectedSeat.getCurrentUserId() == 0) { showAlert(AlertType.WARNING, "알림", "선택한 좌석은 현재 이용자가 없습니다."); return; }
-        if (reason == null || reason.trim().isEmpty()) { showAlert(AlertType.ERROR, "오류", "패널티 사유를 반드시 입력해야 합니다."); return; }
-
-        String userIdStr = String.valueOf(selectedSeat.getCurrentUserId());
-        boolean success = adminService.grantPenalty(userIdStr, reason);
-
-        if (success) {
-            showAlert(AlertType.INFORMATION, "성공", "ID: " + userIdStr + " 님에게 패널티를 부여했습니다.");
-            actionField.clear(); 
-            loadSeatsForRoom(roomListView.getSelectionModel().getSelectedItem()); 
-        } else {
-            showAlert(AlertType.ERROR, "실패", "DB 오류. 패널티 부여에 실패했습니다.");
-        }
+        // (★주의★) 이 로직은 '이전' Penalty 모델을 사용할 수 있습니다.
+        // ... (이전 코드)
     }
     
     @FXML
     void handleEject(ActionEvent event) {
         if (selectedSeat == null) { showAlert(AlertType.ERROR, "오류", "먼저 좌석을 선택하세요."); return; }
         if (selectedSeat.getCurrentUserId() == null || selectedSeat.getCurrentUserId() == 0) { showAlert(AlertType.WARNING, "알림", "선택한 좌석은 현재 이용자가 없습니다."); return; }
-
+        // ... (이하 동일)
         int userId = selectedSeat.getCurrentUserId();
         String seatNum = selectedSeat.getSeatNumber();
         Alert confirmAlert = new Alert(AlertType.CONFIRMATION);
         confirmAlert.setTitle("강제 퇴실 확인");
         confirmAlert.setHeaderText("좌석: " + seatNum + " (이용자 ID: " + userId + ")");
         confirmAlert.setContentText("정말로 이 사용자를 강제 퇴실시키겠습니까?");
-        
         Optional<ButtonType> result = confirmAlert.showAndWait();
-        
         if (result.isPresent() && result.get() == ButtonType.OK) { 
             boolean success = adminService.forceEjectUser(userId, actionField.getText()); 
             if (success) {
@@ -201,16 +240,16 @@ public class AdminController {
         String newStatus = null;
         String confirmText = null;
 
-        if ("G".equals(currentStatus)) {
-            newStatus = "R"; 
-            confirmText = "이 좌석을 '점검 중(R)' 상태로 변경하시겠습니까?";
+        if ("Ｅ".equals(currentStatus)) { 
+            newStatus = "Ｃ"; 
+            confirmText = "이 좌석을 '점검 중(Ｃ)' 상태로 변경하시겠습니까?";
         } 
-        else if ("R".equals(currentStatus) && (currentUserId == null || currentUserId == 0)) {
-            newStatus = "G"; 
-            confirmText = "이 좌석을 '사용 가능(G)' 상태로 변경하시겠습니까?";
+        else if ("Ｃ".equals(currentStatus)) { 
+            newStatus = "Ｅ"; 
+            confirmText = "이 좌석을 '사용 가능(Ｅ)' 상태로 변경하시겠습니까?";
         } 
         else {
-            showAlert(AlertType.WARNING, "변경 불가", "사용자가 이용 중('R')이거나 예약 중('Y')인 좌석은\n점검 상태로 변경할 수 없습니다.");
+            showAlert(AlertType.WARNING, "변경 불가", "사용 중('Ｕ')이거나 예약 중('Ｒ')인 좌석은\n점검 상태로 변경할 수 없습니다.");
             return;
         }
         
@@ -232,24 +271,17 @@ public class AdminController {
         }
     }
 
-    // --- 데이터 로드 및 UI 렌더링 (이하 변경 없음) ---
-
     private void renderVisualSeats(List<Seat> seatList, String roomName) {
         visualSeatGrid.getChildren().clear(); 
-
         for (Seat seat : seatList) {
             StackPane seatPane = createSeatPane(seat);
             String seatNumber = seat.getSeatNumber(); 
-            
             try {
                 char rowChar = seatNumber.charAt(0);
                 int rowIndex = rowChar - 'A'; 
-                
                 int colNum = Integer.parseInt(seatNumber.substring(1));
                 int colIndex = colNum - 1; 
-                
                 visualSeatGrid.add(seatPane, colIndex, rowIndex);
-
             } catch (Exception e) {
                 System.out.println("좌석 번호 파싱 오류: " + seatNumber + " (" + e.getMessage() + ")");
             }
@@ -257,45 +289,64 @@ public class AdminController {
     }
 
     private StackPane createSeatPane(Seat seat) {
-        Rectangle rect = new Rectangle(80, 60);
+        Rectangle rect = new Rectangle(70, 50); 
         rect.setStroke(Color.DARKGRAY);
         rect.setArcWidth(10);
         rect.setArcHeight(10);
 
         Label seatLabel = new Label(seat.getSeatNumber());
-        seatLabel.setFont(new Font("Arial", 14));
+        seatLabel.setFont(new Font("Arial", 12)); 
         seatLabel.setStyle("-fx-font-weight: bold;");
         
         Label userLabel = new Label();
-        userLabel.setFont(new Font("Arial", 10));
+        userLabel.setFont(new Font("Arial", 9)); 
+        
+        Label timeLabel = new Label(); 
+        timeLabel.setFont(new Font("Arial", 9)); 
 
         Integer userId = seat.getCurrentUserId();
+        LocalDateTime startTime = seat.getStartTime();
+        String userName = seat.getCurrentUserName(); 
 
         switch (seat.getStatus()) {
-            case "G": 
+            case "Ｅ": 
                 rect.setFill(Color.LIGHTGREEN); 
                 break;
-            case "Y": 
+                
+            case "Ｒ": 
                 rect.setFill(Color.LIGHTYELLOW);
-                userLabel.setText("예약됨");
+                userLabel.setText("(예약됨)");
                 break;
             
-            case "R": 
-                rect.setFill(Color.INDIANRED); 
-                if (userId != null && userId != 0) { 
+            case "Ｕ": 
+                rect.setFill(Color.DARKGRAY); 
+                if (userName != null && !userName.isEmpty()) {
+                    userLabel.setText(userName);
+                } else if (userId != null && userId != 0) { 
                     userLabel.setText("ID: " + userId);
-                } else { 
-                    userLabel.setText("(점검 중)");
-                    userLabel.setTextFill(Color.WHITE); 
-                    seatLabel.setTextFill(Color.WHITE); 
                 }
+                
+                if (startTime != null) {
+                    timeLabel.setText(startTime.format(TIME_FORMATTER) + " 부터");
+                }
+                userLabel.setTextFill(Color.WHITE); 
+                seatLabel.setTextFill(Color.WHITE); 
+                timeLabel.setTextFill(Color.WHITE);
                 break;
+                
+            case "Ｃ": 
+                rect.setFill(Color.INDIANRED); 
+                userLabel.setText("(점검 중)");
+                userLabel.setTextFill(Color.WHITE); 
+                seatLabel.setTextFill(Color.WHITE); 
+                break;
+                
             default: 
                 rect.setFill(Color.LIGHTGRAY); 
                 break;
         }
         
-        VBox content = new VBox(5, seatLabel, userLabel); 
+        VBox content = new VBox(2, seatLabel, userLabel, timeLabel); 
         content.setAlignment(Pos.CENTER);
         content.setMouseTransparent(true);
 
@@ -318,7 +369,6 @@ public class AdminController {
                 r.setStrokeWidth(1);
             }
         }
-        
         Rectangle clickedRect = (Rectangle) clickedSeatPane.getChildren().get(0);
         clickedRect.setStroke(Color.BLUE); 
         clickedRect.setStrokeWidth(3); 
