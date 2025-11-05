@@ -20,6 +20,7 @@
 <?import javafx.scene.shape.Rectangle?>
 <?import javafx.scene.text.Font?>
 
+
 <BorderPane prefHeight="700.0" prefWidth="900.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.admin.AdminController">
    <top>
       <Label text="관리자 페이지" BorderPane.alignment="CENTER">
