@@ -15,7 +15,7 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.TableColumn; 
 import javafx.scene.control.TableView; 
 import javafx.scene.control.TextField;
-import javafx.scene.control.cell.PropertyValueFactory; // (★신규★)
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.BorderPane; 
 import javafx.scene.layout.GridPane; 
 import javafx.scene.layout.StackPane; 
@@ -25,7 +25,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font; 
 import javafx.stage.Stage; 
 import model.Seat;
-import model.Penalty; // (★신규★)
+import model.Penalty; 
 import service.AdminService;
 
 import java.time.LocalDateTime;
@@ -48,9 +48,8 @@ public class AdminController {
     @FXML private ListView<String> roomListView; 
     @FXML private GridPane visualSeatGrid; 
 
-    // (★수정★) '신고 목록' 탭
     @FXML private TableView<Penalty> reportTable; 
-    @FXML private TableColumn<Penalty, Integer> reportSeatIdCol; // (FXML의 '신고 좌석' -> DB의 seat_index)
+    @FXML private TableColumn<Penalty, Integer> reportSeatIdCol; 
     @FXML private TableColumn<Penalty, String> reportReasonCol;
     @FXML private TableColumn<Penalty, LocalDateTime> reportTimeCol;
     
@@ -68,11 +67,10 @@ public class AdminController {
         setupFloorAndRoomListeners();
         loadFloorList();
         
-        // (★신규★) 신고 목록 탭 초기화
         setupReportTableColumns();
         loadReportList();
         
-        // (창 최대화 코드 - 나중에 주석 해제)
+        // (창 최대화 코드)
         /*
         Platform.runLater(() -> {
             try {
@@ -87,9 +85,6 @@ public class AdminController {
         */
     }
     
-    /**
-     * DB에서 '층' 목록을 동적으로 불러옵니다.
-     */
     private void loadFloorList() {
         List<Integer> floors = adminService.getFloors();
         List<String> floorNames = floors.stream()
@@ -98,9 +93,6 @@ public class AdminController {
         floorListView.setItems(FXCollections.observableArrayList(floorNames));
     }
 
-    /**
-     * 층 및 룸 목록(ListView)의 클릭 리스너 (동적 로직)
-     */
     private void setupFloorAndRoomListeners() {
         // 1. 층(Floor) 리스너
         floorListView.getSelectionModel().selectedItemProperty().addListener(
@@ -130,31 +122,20 @@ public class AdminController {
         );
     }
     
-    // --- (★신규★) 신고 목록 탭 관련 메서드 ---
+    // --- 신고 목록 탭 관련 메서드 ---
     
-    /**
-     * (★신규★) 신고 목록 TableView의 컬럼과 Penalty 모델을 매핑합니다.
-     */
     private void setupReportTableColumns() {
-        // FXML의 fx:id="reportSeatIdCol" -> Penalty.java의 getSeatIndex() 호출
         reportSeatIdCol.setCellValueFactory(new PropertyValueFactory<>("seatIndex")); 
-        
-        // FXML의 fx:id="reportReasonCol" -> Penalty.java의 getReason() 호출
         reportReasonCol.setCellValueFactory(new PropertyValueFactory<>("reason"));
-        
-        // FXML의 fx:id="reportTimeCol" -> Penalty.java의 getReportTime() 호출
         reportTimeCol.setCellValueFactory(new PropertyValueFactory<>("reportTime"));
     }
     
-    /**
-     * (★신규★) DB에서 신고 목록을 불러와 TableView를 채웁니다.
-     */
     private void loadReportList() {
         List<Penalty> penalties = adminService.getAllPenalties();
         reportTable.setItems(FXCollections.observableArrayList(penalties));
     }
     
-    // --- (이하 기존 코드) ---
+    // --- (이하 좌석 관련 코드) ---
     
     private void loadSeatsForRoom(String roomName) {
         List<Seat> seatList = adminService.getSeatsByRoom(roomName);
@@ -165,30 +146,47 @@ public class AdminController {
         this.selectedSeat = seat;
         if (selectedSeat != null) {
             String seatNum = seat.getSeatNumber();
-            String status = seat.getStatus();
+            String status = seat.getStatus(); 
             Integer userId = seat.getCurrentUserId();
             LocalDateTime startTime = seat.getStartTime();
             String startTimeStr = (startTime != null) ? startTime.format(TIME_FORMATTER) : "N/A";
             
             String userName = seat.getCurrentUserName();
-            String userDisplay = (userName != null && !userName.isEmpty()) ? userName : 
-                                 (userId != null && userId != 0) ? "ID: " + userId : "정보 없음";
+            
+            // ★수정: 이름과 ID를 모두 표시하도록 로직 변경 (가장 많은 정보를 제공)
+            String userDisplay;
+            if (userName != null && !userName.isEmpty() && userId != null && userId != 0) {
+                // 이름과 ID가 모두 있을 때: "이름 (ID: 12345)" 형식
+                userDisplay = userName + " (ID: " + userId + ")";
+            } else if (userId != null && userId != 0) {
+                // 이름은 없지만 ID는 있을 때: "ID: 12345" 형식
+                userDisplay = "ID: " + userId; 
+            } else {
+                // 정보가 없을 때
+                userDisplay = "정보 없음";
+            }
 
+            // ★수정: 반각/전각 문자 모두 처리하도록 수정
             switch (status) {
+                case "U": 
                 case "Ｕ": // 사용 중
+                    // userDisplay에는 이제 이름과 ID가 함께 포함됩니다.
                     selectedSeatLabel.setText("좌석: " + seatNum + " (사용중, " + userDisplay + ", 시작: " + startTimeStr + ")");
                     break;
+                case "R": 
                 case "Ｒ": // 예약됨
-                    selectedSeatLabel.setText("좌석: " + seatNum + " (예약됨)");
+                    selectedSeatLabel.setText("좌석: " + seatNum + " (예약됨, " + userDisplay + ")");
                     break;
+                case "E": 
                 case "Ｅ": // 사용 가능
                     selectedSeatLabel.setText("좌석: " + seatNum + " (사용 가능)");
                     break;
+                case "C": 
                 case "Ｃ": // 점검 중
                     selectedSeatLabel.setText("좌석: " + seatNum + " (점검 중)");
                     break;
                 default:
-                    selectedSeatLabel.setText("좌석: " + seatNum + " (알 수 없음)");
+                    selectedSeatLabel.setText("좌석: " + seatNum + " (알 수 없음 - Status: " + status + ")");
                     break;
             }
         } else {
@@ -203,7 +201,6 @@ public class AdminController {
 
     @FXML
     void handlePenalty(ActionEvent event) {
-        // (★주의★) 이 로직은 '이전' Penalty 모델을 사용할 수 있습니다.
         // ... (이전 코드)
     }
     
@@ -211,7 +208,7 @@ public class AdminController {
     void handleEject(ActionEvent event) {
         if (selectedSeat == null) { showAlert(AlertType.ERROR, "오류", "먼저 좌석을 선택하세요."); return; }
         if (selectedSeat.getCurrentUserId() == null || selectedSeat.getCurrentUserId() == 0) { showAlert(AlertType.WARNING, "알림", "선택한 좌석은 현재 이용자가 없습니다."); return; }
-        // ... (이하 동일)
+        
         int userId = selectedSeat.getCurrentUserId();
         String seatNum = selectedSeat.getSeatNumber();
         Alert confirmAlert = new Alert(AlertType.CONFIRMATION);
@@ -236,20 +233,20 @@ public class AdminController {
         if (selectedSeat == null) { showAlert(AlertType.ERROR, "오류", "먼저 좌석을 선택하세요."); return; }
         
         String currentStatus = selectedSeat.getStatus();
-        Integer currentUserId = selectedSeat.getCurrentUserId();
         String newStatus = null;
         String confirmText = null;
 
-        if ("Ｅ".equals(currentStatus)) { 
-            newStatus = "Ｃ"; 
+        // ★수정: 반각/전각 문자 모두 확인
+        if ("E".equals(currentStatus) || "Ｅ".equals(currentStatus)) { 
+            newStatus = "C"; 
             confirmText = "이 좌석을 '점검 중(Ｃ)' 상태로 변경하시겠습니까?";
         } 
-        else if ("Ｃ".equals(currentStatus)) { 
-            newStatus = "Ｅ"; 
+        else if ("C".equals(currentStatus) || "Ｃ".equals(currentStatus)) { 
+            newStatus = "E"; 
             confirmText = "이 좌석을 '사용 가능(Ｅ)' 상태로 변경하시겠습니까?";
         } 
         else {
-            showAlert(AlertType.WARNING, "변경 불가", "사용 중('Ｕ')이거나 예약 중('Ｒ')인 좌석은\n점검 상태로 변경할 수 없습니다.");
+            showAlert(AlertType.WARNING, "변경 불가", "사용 중('U'/'Ｕ')이거나 예약 중('R'/'Ｒ')인 좌석은\n점검 상태로 변경할 수 없습니다.");
             return;
         }
         
@@ -308,24 +305,30 @@ public class AdminController {
         LocalDateTime startTime = seat.getStartTime();
         String userName = seat.getCurrentUserName(); 
 
+        // ★수정: 반각/전각 문자 모두 확인하여 UI 색상/텍스트 설정
         switch (seat.getStatus()) {
-            case "Ｅ": 
+            case "E": 
+            case "Ｅ": // 사용 가능
                 rect.setFill(Color.LIGHTGREEN); 
                 break;
                 
-            case "Ｒ": 
+            case "R": 
+            case "Ｒ": // 예약됨
                 rect.setFill(Color.LIGHTYELLOW);
                 userLabel.setText("(예약됨)");
                 break;
             
-            case "Ｕ": 
+            case "U": 
+            case "Ｕ": // 사용 중
                 rect.setFill(Color.DARKGRAY); 
-                if (userName != null && !userName.isEmpty()) {
-                    userLabel.setText(userName);
-                } else if (userId != null && userId != 0) { 
-                    userLabel.setText("ID: " + userId);
-                }
                 
+                // ★수정: 이름과 ID를 모두 표시하도록 로직 변경
+                if (userName != null && !userName.isEmpty() && userId != null && userId != 0) {
+                    userLabel.setText(userName + " (" + userId + ")"); // 이름 (ID) 형식
+                } else if (userId != null && userId != 0) { 
+                    userLabel.setText("ID: " + userId); // 이름 없이 ID만 표시
+                }
+
                 if (startTime != null) {
                     timeLabel.setText(startTime.format(TIME_FORMATTER) + " 부터");
                 }
@@ -334,7 +337,8 @@ public class AdminController {
                 timeLabel.setTextFill(Color.WHITE);
                 break;
                 
-            case "Ｃ": 
+            case "C": 
+            case "Ｃ": // 점검 중
                 rect.setFill(Color.INDIANRED); 
                 userLabel.setText("(점검 중)");
                 userLabel.setTextFill(Color.WHITE); 
