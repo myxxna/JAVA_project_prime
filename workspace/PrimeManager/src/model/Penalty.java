@@ -1,57 +1,48 @@
 package model;
 
-import java.time.LocalDate; // 날짜만 필요하므로 LocalDate 사용
+import java.time.LocalDateTime;
 
+// (★수정★) 새 penalty DB 스키마에 맞춘 모델
 public class Penalty {
 
-    private String userId;  // 패널티를 받은 사용자 ID
-    private String reason;  // 사유
-    private LocalDate date;    // 부과 날짜
+    private int num;
+    private int stId;
+    private String reason;
+    private LocalDateTime reportTime;
+    private int seatIndex;
 
     // 기본 생성자
-    public Penalty() {
+    public Penalty() {}
+
+    // --- Getter & Setter ---
+    public int getNum() {
+        return num;
     }
-
-    // 모든 필드를 받는 생성자
-    public Penalty(String userId, String reason, LocalDate date) {
-        this.userId = userId;
-        this.reason = reason;
-        this.date = date;
+    public void setNum(int num) {
+        this.num = num;
     }
-
-    // --- Getter와 Setter ---
-
-    public String getUserId() {
-        return userId;
+    public int getStId() {
+        return stId;
     }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
+    public void setStId(int stId) {
+        this.stId = stId;
     }
-
     public String getReason() {
         return reason;
     }
-
     public void setReason(String reason) {
         this.reason = reason;
     }
-
-    public LocalDate getDate() {
-        return date;
+    public LocalDateTime getReportTime() {
+        return reportTime;
     }
-
-    public void setDate(LocalDate date) {
-        this.date = date;
+    public void setReportTime(LocalDateTime reportTime) {
+        this.reportTime = reportTime;
     }
-
-    // 디버깅용 toString()
-    @Override
-    public String toString() {
-        return "Penalty{" +
-                "userId='" + userId + '\'' +
-                ", reason='" + reason + '\'' +
-                ", date=" + date +
-                '}';
+    public int getSeatIndex() {
+        return seatIndex;
+    }
+    public void setSeatIndex(int seatIndex) {
+        this.seatIndex = seatIndex;
     }
 }
