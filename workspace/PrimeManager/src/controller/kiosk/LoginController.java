@@ -37,6 +37,7 @@ import javafx.scene.control.Label;
 public class LoginController {
     
     // 🛑 [수정] 클래스 레벨 필드 (로그아웃 타이머 관련)
+
     private static final int INACTIVITY_TIMEOUT_MS = 300000; // 5분
     private static Timeline logoutTimer;
     private static Stage currentPrimaryStage; 
