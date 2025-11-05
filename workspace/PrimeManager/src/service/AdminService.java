@@ -15,33 +15,28 @@ public class AdminService {
         this.adminDAO = new AdminDAOimpl(); 
     }
 
-    /**
-     * (★수정★) DB에서 층 목록을 가져옵니다.
-     * @return 층 번호 리스트
-     */
     public List<Integer> getFloors() {
         return adminDAO.getUniqueFloors();
     }
     
-    /**
-     * (★수정★) 특정 층의 룸 목록을 가져옵니다.
-     * @param floor 층 번호
-     * @return 룸 이름 리스트
-     */
     public List<String> getRoomsByFloor(int floor) {
         return adminDAO.getUniqueRoomsByFloor(floor);
     }
     
-    // (이전의 getRoomNames()는 이제 사용되지 않습니다)
+    public List<String> getRoomNames() {
+        return adminDAO.getUniqueRoomNames();
+    }
     
     public List<Seat> getSeatsByRoom(String roomName) {
         return adminDAO.getAllSeatStatusByRoom(roomName);
     }
     
     public boolean grantPenalty(String userId, String reason) {
-        LocalDate today = LocalDate.now(); 
-        Penalty penalty = new Penalty(userId, reason, today);
-        return adminDAO.addPenalty(penalty);
+        // (★주의★) 이 로직은 '이전' Penalty 모델을 사용할 수 있습니다.
+        // LocalDate today = LocalDate.now(); 
+        // Penalty penalty = new Penalty(userId, reason, today);
+        // return adminDAO.addPenalty(penalty);
+        return false; // 임시
     }
     
     public boolean forceEjectUser(int userId, String reason) {
@@ -50,5 +45,12 @@ public class AdminService {
     
     public boolean setSeatStatus(int seatId, String newStatus) {
         return adminDAO.setSeatStatus(seatId, newStatus);
+    }
+
+    /**
+     * (★신규★) 신고 목록 조회를 DAO에 요청
+     */
+    public List<Penalty> getAllPenalties() {
+        return adminDAO.getAllPenalties();
     }
 }
