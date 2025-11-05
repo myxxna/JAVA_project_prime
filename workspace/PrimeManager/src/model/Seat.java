@@ -1,5 +1,6 @@
 package model;
 
+// (★수정★) 새 DB 스키마에 맞춘 Seat 모델
 public class Seat {
     private final int id;
     private final String number;
