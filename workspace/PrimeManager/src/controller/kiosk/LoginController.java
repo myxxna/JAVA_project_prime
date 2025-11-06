@@ -1,6 +1,6 @@
 package controller.kiosk;
 
-import javafx.application.Platform; 
+import javafx.application.Platform;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -30,22 +30,23 @@ import javafx.animation.PauseTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.layout.VBox;
-import javafx.stage.Modality; 
+import javafx.stage.Modality;
 import javafx.scene.control.Label;
-import javafx.scene.Node; // (★필수★) Stage를 가져오기 위해 Node import
+import javafx.scene.Node;
 
 public class LoginController {
-    
-    private static final int INACTIVITY_TIMEOUT_MS = 300000; // 5분
+
+    private static final int INACTIVITY_TIMEOUT_MS = 300000;
     private static Timeline logoutTimer;
-    private static Stage currentPrimaryStage; 
+    private static Stage currentPrimaryStage;
     private static volatile boolean isLogoutInProgress = false;
-    
+
     @FXML private TextField studentIdField;
     @FXML private PasswordField passwordField;
-    @FXML private Button loginButton; 
+    @FXML private Button loginButton;
 
     private UserService userService = new UserService();
+
     public static User currentUser; 
     
     public static User getCurrentLoggedInUser() {
@@ -55,14 +56,13 @@ public class LoginController {
     @FXML
     private void handleLoginButtonAction(ActionEvent event) {
         String userId = studentIdField.getText();
-        char[] password = passwordField.getText().toCharArray(); 
+        char[] password = passwordField.getText().toCharArray();
 
         User authenticatedUser = userService.authenticate(userId, password);
         Arrays.fill(password, ' ');
 
         if (authenticatedUser != null) {
-            
-            // (★수정★) DB 스키마에 맞게 'role'이 아닌 'penalty_count'를 직접 확인
+
             if (authenticatedUser.getPenaltyCount() >= UserService.MAX_PENALTY_COUNT) {
                 Alert penaltyAlert = new Alert(AlertType.ERROR);
                 penaltyAlert.setTitle("로그인 실패");
@@ -70,25 +70,23 @@ public class LoginController {
                 penaltyAlert.setContentText("패널티 횟수(" + UserService.MAX_PENALTY_COUNT + "회 이상) 초과로 로그인이 제한되었습니다.");
                 penaltyAlert.showAndWait();
             } else {
-                currentUser = authenticatedUser; 
-                
+                currentUser = authenticatedUser;
+
                 if (currentUser.isAdmin()) {
                     Alert adminAlert = new Alert(AlertType.INFORMATION);
                     adminAlert.setTitle("관리자 로그인 성공");
                     adminAlert.setHeaderText(null);
                     adminAlert.setContentText(currentUser.getName() + " 관리자님, 시스템으로 진입합니다.");
                     adminAlert.showAndWait();
-                    
-                    // (★수정★) event를 loadNextScene으로 전달
-                    loadNextScene(event, "/view/admin/AdminView.fxml", "관리자 시스템"); 
+
+                    loadNextScene(event, "/view/admin/AdminView.fxml", "관리자 시스템");
                 } else {
                     Alert successAlert = new Alert(AlertType.INFORMATION);
                     successAlert.setTitle("로그인 성공");
                     successAlert.setHeaderText(null);
                     successAlert.setContentText(currentUser.getName() + "님, 좌석 예약 시스템에 오신 것을 환영합니다!");
                     successAlert.showAndWait();
-                    
-                    // (★수정★) event를 loadNextScene으로 전달
+
                     loadNextScene(event, "/view/kiosk/SeatMapView.fxml", "좌석 예약 시스템");
                 }
             }
@@ -101,39 +99,36 @@ public class LoginController {
             passwordField.setText("");
         }
     }
-    
-    /**
-     * (★수정★) FXML 로드 및 Scene 전환, 창 최대화 로직 추가
-     */
+
     private void loadNextScene(ActionEvent event, String fxmlPath, String title) {
         try {
-            // 1. 현재 Stage를 가져옴
             Stage stage = (Stage) ((Node)event.getSource()).getScene().getWindow();
-            
-            // 2. FXML 로드
+
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
             Parent root = loader.load();
-            
-            // 3. Scene 생성 및 설정
-            Scene scene = new Scene(root);
-            stage.setTitle(title);
-            
-            // (★이것이 해결책입니다★)
-            if (fxmlPath.contains("/admin/")) {
-                stage.setMaximized(true); // 창 최대화
-                stage.setResizable(true);  // 크기 조절 가능하게 (필수)
+
+            Scene scene;
+
+            if (fxmlPath.contains("SeatMapView.fxml")) {
+                scene = new Scene(root, 900, 650);
+                stage.setMaximized(false);
+                stage.setResizable(false);
+            } else if (fxmlPath.contains("/admin/")) {
+                scene = new Scene(root);
+                stage.setMaximized(true);
+                stage.setResizable(true);
             } else {
-                stage.setMaximized(false); 
-                stage.setResizable(false); // 키오스크는 크기 고정
-                stage.centerOnScreen();
+                scene = new Scene(root);
             }
 
+            stage.setTitle(title);
             stage.setScene(scene);
-            
-            setupAutoLogout(scene, stage); 
+            stage.centerOnScreen();
+
+            setupAutoLogout(scene, stage);
 
             stage.show();
-            
+
         } catch (IOException e) {
             e.printStackTrace();
             Alert fatalError = new Alert(AlertType.ERROR);
@@ -143,10 +138,7 @@ public class LoginController {
             fatalError.showAndWait();
         }
     }
-    
-    // ----------------------------------------------------
-    // (이하 자동 로그아웃 코드는 동일)
-    // ----------------------------------------------------
+
 
     public static void setLoggedInUser(User user) {
         currentUser = user;
@@ -154,18 +146,18 @@ public class LoginController {
 
     public static void setupAutoLogout(Scene scene, Stage stage) {
         currentPrimaryStage = stage;
-        
+
         if (logoutTimer != null) {
             logoutTimer.stop();
         }
-        
+
         KeyFrame keyFrame = new KeyFrame(
-            Duration.millis(INACTIVITY_TIMEOUT_MS), 
-            event -> performLogout()
+                Duration.millis(INACTIVITY_TIMEOUT_MS),
+                event -> performLogout()
         );
-        
+
         logoutTimer = new Timeline(keyFrame);
-        logoutTimer.setCycleCount(1); 
+        logoutTimer.setCycleCount(1);
         logoutTimer.play();
 
         EventHandler<Event> activityHandler = event -> {
@@ -176,63 +168,65 @@ public class LoginController {
         };
 
         scene.addEventFilter(MouseEvent.ANY, activityHandler);
+        // ▼▼▼▼▼ [★ 여기가 수정된 부분 ★] ▼▼▼▼▼
         scene.addEventFilter(KeyEvent.ANY, activityHandler);
+        // ▲▲▲▲▲ [★ 수정 완료 ★] ▲▲▲▲▲
     }
-    
-    
+
+
     private static void performLogout() {
-        
+
         if (isLogoutInProgress) {
-            return; 
+            return;
         }
         isLogoutInProgress = true;
-        
+
         if (logoutTimer != null) {
             logoutTimer.stop();
         }
-        currentUser = null; 
+        currentUser = null;
 
         Platform.runLater(() -> {
             try {
                 Stage popupStage = new Stage();
-                popupStage.initModality(Modality.APPLICATION_MODAL); 
+                popupStage.initModality(Modality.APPLICATION_MODAL);
                 popupStage.setTitle("자동 로그아웃");
-                
+
                 VBox layout = new VBox(10);
                 layout.setAlignment(Pos.CENTER);
                 layout.setPadding(new Insets(20));
                 layout.getChildren().addAll(
-                    new Label("비활성화로 인해 자동 로그아웃되었습니다."),
-                    new Label("5초 후 로그인 화면으로 돌아갑니다.")
+                        new Label("비활성화로 인해 자동 로그아웃되었습니다."),
+                        new Label("5초 후 로그인 화면으로 돌아갑니다.")
                 );
-                
+
                 Scene popupScene = new Scene(layout, 350, 150);
                 popupStage.setScene(popupScene);
                 popupStage.show();
-                
+
                 PauseTransition delay = new PauseTransition(Duration.seconds(5));
                 delay.setOnFinished(e -> {
                     try {
                         popupStage.close();
-                        
+
                         FXMLLoader loader = new FXMLLoader(LoginController.class.getResource("/view/kiosk/LoginView.fxml"));
                         Parent root = loader.load();
-                        
+
                         Scene newScene = new Scene(root);
                         currentPrimaryStage.setScene(newScene);
                         currentPrimaryStage.show();
-                        
+
                     } catch (IOException ex) {
                         ex.printStackTrace();
                     } finally {
-                        isLogoutInProgress = false; 
+                        isLogoutInProgress = false;
                     }
                 });
                 delay.play();
-                
-            } catch (Exception e) { 
+
+            } catch (Exception e) {
                 e.printStackTrace();
-                isLogoutInProgress = false; 
+                isLogoutInProgress = false;
             }
         });
     }
