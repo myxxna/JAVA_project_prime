@@ -12,7 +12,7 @@ public class AppLauncher extends Application {
     public void start(Stage primaryStage) throws IOException {
         try {
             // FXML 파일 로드 경로를 확인하세요.
-            Parent root = FXMLLoader.load(getClass().getResource("view/kiosk/SeatMapView.fxml")); 
+            Parent root = FXMLLoader.load(getClass().getResource("view/kiosk/LoginView.fxml"));
             
             // ⚠️ FXML에서 테두리 요청에 따른 UI 개선을 위해 Scene 크기를 조정할 수 있습니다.
             Scene scene = new Scene(root, 900, 650); 
