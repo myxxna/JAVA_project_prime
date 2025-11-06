@@ -1,109 +1,60 @@
+package model;
 
 import java.time.LocalDateTime;
 
 public class Seat {
-    private int id;
-    private String roomNumber;
-    private String seatNumber;
-    private boolean reserved;
-    private String status; // G: 이용가능, R: 이용중, Y: 예약중
-    private Integer currentUserId;
+    // DB 칼럼 이름에 기반하여 필드를 정의합니다.
+    private int id; // seat_id
+    private int floor; 
+    private String roomNumber; // room_index
+    private int seatIndex;
+    private String seatNumber; // seat_number
+    private String status;
+    private Integer currentUserId; // 🛑 DB의 NULL 값을 위해 Integer (Wrapper) 사용
+    private String currentUserName; // JOIN으로 가져온 실제 사용자 이름
     private LocalDateTime startTime;
     private LocalDateTime endTime;
 
-    // 기본 생성자
-    public Seat() {}
-
-    // 전체 필드 생성자 (필요시)
-    public Seat(int id, String roomNumber, String seatNumber, boolean reserved, String status,
-                Integer currentUserId, LocalDateTime startTime, LocalDateTime endTime) {
-        this.id = id;
-        this.roomNumber = roomNumber;
-        this.seatNumber = seatNumber;
-        this.reserved = reserved;
-        this.status = status;
-        this.currentUserId = currentUserId;
-        this.startTime = startTime;
-        this.endTime = endTime;
+    // ----------------------------------------------------
+    // 🛑 1. 기본 생성자 (AdminDAOimpl에서 'new Seat()' 호출 시 사용)
+    // ----------------------------------------------------
+    public Seat() {
+        // 기본 초기화
     }
+    
+    // 🛑 2. Setter 정의 (AdminDAOimpl에서 데이터를 채울 때 사용)
+    // ----------------------------------------------------
+    
+    // AdminDAOimpl.java 오류 해결: set...()
+    public void setId(int id) { this.id = id; }
+    public void setFloor(int floor) { this.floor = floor; }
+    public void setRoomNumber(String roomNumber) { this.roomNumber = roomNumber; }
+    public void setSeatIndex(int seatIndex) { this.seatIndex = seatIndex; }
+    public void setSeatNumber(String seatNumber) { this.seatNumber = seatNumber; }
+    public void setStatus(String status) { this.status = status; }
 
-    // --- Getter & Setter ---
-    public int getId() {
-        return id;
-    }
+    // 🛑 DAO 오류 해결: NULL을 받기 위해 Integer를 사용해야 합니다.
+    public void setCurrentUserId(Integer currentUserId) { this.currentUserId = currentUserId; } 
+    public void setCurrentUserName(String currentUserName) { this.currentUserName = currentUserName; }
 
-    public void setId(int id) {
-        this.id = id;
-    }
+    // DAO 오류 해결: LocalDateTime을 받거나 null을 받습니다.
+    public void setStartTime(LocalDateTime startTime) { this.startTime = startTime; }
+    public void setEndTime(LocalDateTime endTime) { this.endTime = endTime; }
 
-    public String getRoomNumber() {
-        return roomNumber;
-    }
 
-    public void setRoomNumber(String roomNumber) {
-        this.roomNumber = roomNumber;
-    }
+    // ----------------------------------------------------
+    // 🛑 3. Getter 정의 (AdminController에서 데이터를 읽을 때 사용)
+    // ----------------------------------------------------
 
-    public String getSeatNumber() {
-        return seatNumber;
-    }
+    // AdminController.java 오류 해결: get...()
+    public int getId() { return id; }
+    public String getSeatNumber() { return seatNumber; }
+    public String getStatus() { return status; }
+    public Integer getCurrentUserId() { return currentUserId; }
+    public String getCurrentUserName() { return currentUserName; }
+    public LocalDateTime getStartTime() { return startTime; }
+    public LocalDateTime getEndTime() { return endTime; }
 
-    public void setSeatNumber(String seatNumber) {
-        this.seatNumber = seatNumber;
-    }
-
-    public boolean isReserved() {
-        return reserved;
-    }
-
-    public void setReserved(boolean reserved) {
-        this.reserved = reserved;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public Integer getCurrentUserId() {
-        return currentUserId;
-    }
-
-    public void setCurrentUserId(Integer currentUserId) {
-        this.currentUserId = currentUserId;
-    }
-
-    public LocalDateTime getStartTime() {
-        return startTime;
-    }
-
-    public void setStartTime(LocalDateTime startTime) {
-        this.startTime = startTime;
-    }
-
-    public LocalDateTime getEndTime() {
-        return endTime;
-    }
-
-    public void setEndTime(LocalDateTime endTime) {
-        this.endTime = endTime;
-    }
-
-    // --- 디버깅용 출력 ---
-    @Override
-    public String toString() {
-        return "Seat{" +
-                "id=" + id +
-                ", roomNumber='" + roomNumber + '\'' +
-                ", seatNumber='" + seatNumber + '\'' +
-                ", reserved=" + reserved +
-                ", status='" + status + '\'' +
-                ", currentUserId=" + currentUserId +
-                ", startTime=" + startTime +
-                ", endTime=" + endTime +
-                '}';
-    }
+    // 🛑 [참고] DB에서 null일 때 setCurrentUserId(null)을 호출할 수 있도록
+    // AdminDAOimpl.java의 rs.getInt("current_user_id") 로직도 rs.getObject("current_user_id")로 수정해야 합니다.
 }

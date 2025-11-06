@@ -1,91 +1,36 @@
-
 package impl;
 
-import config.DBConnection;
-import interfaces.ISeatDAO;
 import model.Seat;
-
-import java.sql.*;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SeatDAOImpl implements ISeatDAO {
+public class SeatDAOImpl {
+    
+    private static final List<Seat> ALL_SEATS_DUMMY;
+    
+    static {
+        ALL_SEATS_DUMMY = new ArrayList<>();
+        // 15개 더미 좌석 데이터
+        ALL_SEATS_DUMMY.add(new Seat(1, "A1", 0, 0));
+        ALL_SEATS_DUMMY.add(new Seat(2, "A2", 0, 1));
+        ALL_SEATS_DUMMY.add(new Seat(3, "A3", 0, 2));
+        ALL_SEATS_DUMMY.add(new Seat(4, "A4", 1, 0));
+        ALL_SEATS_DUMMY.add(new Seat(5, "A5", 1, 1));
+        
+        ALL_SEATS_DUMMY.add(new Seat(6, "B1", 2, 0));
+        ALL_SEATS_DUMMY.add(new Seat(7, "B2", 2, 1));
+        ALL_SEATS_DUMMY.add(new Seat(8, "B3", 2, 2));
+        ALL_SEATS_DUMMY.add(new Seat(9, "B4", 3, 0));
+        ALL_SEATS_DUMMY.add(new Seat(10, "B5", 3, 1));
+        
+        ALL_SEATS_DUMMY.add(new Seat(11, "C1", 4, 0));
+        ALL_SEATS_DUMMY.add(new Seat(12, "C2", 4, 1));
+        ALL_SEATS_DUMMY.add(new Seat(13, "C3", 4, 2));
+        ALL_SEATS_DUMMY.add(new Seat(14, "C4", 5, 0));
+        ALL_SEATS_DUMMY.add(new Seat(15, "C5", 5, 1));
+    }
 
-    @Override
     public List<Seat> getAllSeats() {
-        List<Seat> seats = new ArrayList<>();
-        String sql = "SELECT * FROM seats";
-        try (Connection conn = DBConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-
-            while (rs.next()) {
-                seats.add(new Seat(
-                        rs.getInt("id"),
-                        rs.getString("room_number"),
-                        rs.getString("seat_number"),
-                        rs.getBoolean("reserved"),
-                        rs.getString("status"),
-                        rs.getInt("user_id"),
-                        rs.getTimestamp("start_time") != null ? rs.getTimestamp("start_time").toLocalDateTime() : null,
-                        rs.getTimestamp("end_time") != null ? rs.getTimestamp("end_time").toLocalDateTime() : null
-                ));
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return seats;
-    }
-
-    @Override
-    public Seat getSeatById(int id) {
-        String sql = "SELECT * FROM seats WHERE id=?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setInt(1, id);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    return new Seat(
-                            rs.getInt("id"),
-                            rs.getString("room_number"),
-                            rs.getString("seat_number"),
-                            rs.getBoolean("reserved"),
-                            rs.getString("status"),
-                            rs.getInt("user_id"),
-                            rs.getTimestamp("start_time") != null ? rs.getTimestamp("start_time").toLocalDateTime() : null,
-                            rs.getTimestamp("end_time") != null ? rs.getTimestamp("end_time").toLocalDateTime() : null
-                    );
-                }
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    @Override
-    public boolean updateSeat(Seat seat) {
-        String sql = "UPDATE seats SET reserved=?, status=?, user_id=?, start_time=?, end_time=? WHERE id=?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setBoolean(1, seat.isReserved());
-            pstmt.setString(2, seat.getStatus());
-            pstmt.setInt(3, seat.getCurrentUserId());
-            pstmt.setTimestamp(4, seat.getStartTime() != null ? Timestamp.valueOf(seat.getStartTime()) : null);
-            pstmt.setTimestamp(5, seat.getEndTime() != null ? Timestamp.valueOf(seat.getEndTime()) : null);
-            pstmt.setInt(6, seat.getId());
-
-            return pstmt.executeUpdate() > 0;
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
+        return new ArrayList<>(ALL_SEATS_DUMMY);
     }
 }
-
