@@ -1,7 +1,0 @@
-<?import javafx.scene.layout.AnchorPane?>
-<AnchorPane fx:controller="controller.SeatController"
-            xmlns:fx="http://javafx.com/fxml"
-            xmlns="http://javafx.com/javafx"
-            prefHeight="400.0" prefWidth="600.0">
-    <!-- UI 요소들 -->
-</AnchorPane>
