@@ -1,140 +1,49 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.image.Image?>
-<?import javafx.scene.image.ImageView?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.ColumnConstraints?>
-<?import javafx.scene.layout.GridPane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.Region?>
-<?import javafx.scene.layout.RowConstraints?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Text?>
+<?import controller.kiosk.SeatController?>
 
-<AnchorPane fx:id="rootPane" prefHeight="1080.0" prefWidth="1920.0" 
-            stylesheets="@/style.css" styleClass="root-pane" 
-            xmlns="http://javafx.com/javafx/21" 
+<AnchorPane xmlns="http://javafx.com/javafx/17" 
             xmlns:fx="http://javafx.com/fxml/1" 
-            fx:controller="controller.kiosk.SeatController">
-   <children>
-   
-      <Label styleClass="title-label" text="입실/퇴실" 
-             AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="20.0" alignment="CENTER" />
-      
-      <AnchorPane styleClass="main-panel" 
-                  prefHeight="650.0" prefWidth="1200.0" 
-                  AnchorPane.leftAnchor="360.0" AnchorPane.rightAnchor="360.0" AnchorPane.topAnchor="215.0" AnchorPane.bottomAnchor="215.0">
-         <children>
-         
-            <VBox fx:id="menuVbox" styleClass="menu-vbox" 
-                  layoutX="20.0" layoutY="20.0" spacing="10.0" 
-                  AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="20.0">
-               <children>
-                  <HBox spacing="8.0">
-                     <children>
-                        <Button fx:id="floor4Button" onAction="#handleFloorSelection" text="4층" prefWidth="55.0" />
-                        <Button fx:id="floor7Button" onAction="#handleFloorSelection" text="7층" prefWidth="55.0" />
-                     </children>
-                  </HBox>
-                  <Region styleClass="menu-spacer" prefWidth="120.0" />
-                  
-                  <Button fx:id="meetingRoom1Button" onAction="#handleRoomSelection" text="회의실 1" />
-                  <Button fx:id="meetingRoom2Button" onAction="#handleRoomSelection" text="회의실 2" />
-                  <Button fx:id="individualSeatButton" onAction="#handleRoomSelection" text="개인좌석" />
-                  
-                  <Region styleClass="menu-spacer" prefWidth="120.0" />
-                  <Region styleClass="menu-spacer" prefWidth="120.0" />
-               </children>
-            </VBox>
+            fx:controller="controller.kiosk.SeatController"
             
-            <Label fx:id="selectedSeatLabel" styleClass="seat-info-label" 
-                   text="좌석을 선택하세요" 
-                   layoutX="180.0" layoutY="30.0" 
-                   AnchorPane.leftAnchor="180.0" AnchorPane.topAnchor="30.0" />
-            
-            <GridPane fx:id="seatGrid" styleClass="seat-grid" 
-                      layoutX="180.0" layoutY="80.0" hgap="10.0" vgap="8.0" 
-                      AnchorPane.leftAnchor="180.0" AnchorPane.topAnchor="80.0" AnchorPane.rightAnchor="20.0" AnchorPane.bottomAnchor="20.0">
-               <columnConstraints>
-                  <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="80.0" />
-                  <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="80.0" />
-                  <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="80.0" />
-                  <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="80.0" />
-                  <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="80.0" />
-                  <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="80.0" />
-                  <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="80.0" />
-                  <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="80.0" />
-                  <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="80.0" />
-                  <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="80.0" />
-               </columnConstraints>
-               <rowConstraints>
-                  <RowConstraints minHeight="10.0" prefHeight="50.0" vgrow="SOMETIMES" />
-                  <RowConstraints minHeight="10.0" prefHeight="50.0" vgrow="SOMETIMES" />
-                  <RowConstraints minHeight="10.0" prefHeight="50.0" vgrow="SOMETIMES" />
-                  <RowConstraints minHeight="10.0" prefHeight="50.0" vgrow="SOMETIMES" />
-               </rowConstraints>
-               <children>
-                  <Button fx:id="seat01" text="01" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-                  <Button fx:id="seat02" text="02" GridPane.columnIndex="1" GridPane.rowIndex="0" />
-                  <Button fx:id="seat03" text="03" GridPane.columnIndex="2" GridPane.rowIndex="0" />
-                  <Button fx:id="seat04" text="04" GridPane.columnIndex="3" GridPane.rowIndex="0" />
-                  <Button fx:id="seat05" text="05" GridPane.columnIndex="4" GridPane.rowIndex="0" />
-                  <Button fx:id="seat06" text="06" GridPane.columnIndex="5" GridPane.rowIndex="0" />
-                  <Button fx:id="seat07" text="07" GridPane.columnIndex="6" GridPane.rowIndex="0" />
-                  <Button fx:id="seat08" text="08" GridPane.columnIndex="7" GridPane.rowIndex="0" />
-                  <Button fx:id="seat09" text="09" GridPane.columnIndex="8" GridPane.rowIndex="0" />
-                  <Button fx:id="seat10" text="10" GridPane.columnIndex="9" GridPane.rowIndex="0" />
-                  
-                  <Button fx:id="seat11" text="11" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-                  <Button fx:id="seat12" text="12" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                  <Button fx:id="seat13" text="13" GridPane.columnIndex="2" GridPane.rowIndex="1" />
-                  <Button fx:id="seat14" text="14" GridPane.columnIndex="3" GridPane.rowIndex="1" />
-                  <Button fx:id="seat15" text="15" GridPane.columnIndex="4" GridPane.rowIndex="1" />
-                  <Button fx:id="seat16" text="16" GridPane.columnIndex="5" GridPane.rowIndex="1" />
-                  <Button fx:id="seat17" text="17" GridPane.columnIndex="6" GridPane.rowIndex="1" />
-                  <Button fx:id="seat18" text="18" GridPane.columnIndex="7" GridPane.rowIndex="1" />
-                  <Button fx:id="seat19" text="19" GridPane.columnIndex="8" GridPane.rowIndex="1" />
-                  <Button fx:id="seat20" text="20" GridPane.columnIndex="9" GridPane.rowIndex="1" />
-                  
-                  <Button text="21" GridPane.columnIndex="0" GridPane.rowIndex="2" />
-                  <Button text="22" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-                  <Button text="23" GridPane.columnIndex="2" GridPane.rowIndex="2" />
-                  <Button text="24" GridPane.columnIndex="3" GridPane.rowIndex="2" />
-                  <Button text="25" GridPane.columnIndex="4" GridPane.rowIndex="2" />
-                  <Button text="26" GridPane.columnIndex="5" GridPane.rowIndex="2" />
-                  <Button text="27" GridPane.columnIndex="6" GridPane.rowIndex="2" />
-                  <Button text="28" GridPane.columnIndex="7" GridPane.rowIndex="2" />
-                  <Button text="29" GridPane.columnIndex="8" GridPane.rowIndex="2" />
-                  <Button text="30" GridPane.columnIndex="9" GridPane.rowIndex="2" />
-                  
-                  <Button text="31" GridPane.columnIndex="0" GridPane.rowIndex="3" />
-                  <Button text="32" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-                  <Button text="33" GridPane.columnIndex="2" GridPane.rowIndex="3" />
-                  <Button text="34" GridPane.columnIndex="3" GridPane.rowIndex="3" />
-                  <Button text="35" GridPane.columnIndex="4" GridPane.rowIndex="3" />
-                  <Button text="36" GridPane.columnIndex="5" GridPane.rowIndex="3" />
-                  <Button text="37" GridPane.columnIndex="6" GridPane.rowIndex="3" />
-                  <Button text="38" GridPane.columnIndex="7" GridPane.rowIndex="3" />
-                  <Button text="39" GridPane.columnIndex="8" GridPane.rowIndex="3" />
-                  <Button text="40" GridPane.columnIndex="9" GridPane.rowIndex="3" />
-               </children>
+            style="-fx-border-color: #607d8b; -fx-border-width: 2px; -fx-padding: 15;">
+
+    <VBox layoutX="15.0" layoutY="15.0" spacing="10" AnchorPane.bottomAnchor="15.0" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="15.0">
+        
+        <HBox spacing="20">
+            <Label text="선택 좌석:"/>
+            <Text fx:id="selectedSeatNumber" text="선택 전" style="-fx-font-weight: bold;"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label text="남은 시간:"/>
+            <Text fx:id="remainingTimeText" text="00:00:00" style="-fx-font-size: 18px; -fx-fill: #e57373; -fx-font-weight: bold;"/>
+        </HBox>
+
+        <Separator/>
+
+        <GridPane fx:id="seatGrid" alignment="CENTER" hgap="10" vgap="10" VBox.vgrow="ALWAYS">
             </GridPane>
-         </children>
-      </AnchorPane>
-      
-      <Button fx:id="homeButton" onAction="#handleHomeButton" text="홈으로 돌아가기" 
-              styleClass="home-button" 
-              AnchorPane.leftAnchor="20.0" AnchorPane.bottomAnchor="20.0">
-         <graphic>
-            <ImageView fitHeight="30.0" fitWidth="30.0" pickOnBounds="true" preserveRatio="true">
-               <image>
-                  <Image url="@/images/home_icon.jpg" />
-               </image>
-            </ImageView>
-         </graphic>
-      </Button>
-      
-   </children>
+
+        <Separator/>
+        
+        <HBox alignment="CENTER" spacing="10">
+            <Button fx:id="reserveButton" text="좌석 예약" onAction="#handleReservation" style="-fx-background-color: #ffb74d; -fx-text-fill: white; -fx-min-width: 120;"/>
+            <Button fx:id="checkInButton" text="입실하기" onAction="#handleCheckIn" disable="true" style="-fx-background-color: #81c784; -fx-text-fill: white; -fx-min-width: 100;"/>
+            <Button fx:id="extendButton" text="30분 연장" onAction="#handleExtension" disable="true" style="-fx-background-color: #4db6ac; -fx-text-fill: white; -fx-min-width: 100;"/>
+            <Button fx:id="extend60Button" text="60분 연장" onAction="#handleExtension60" disable="true" style="-fx-background-color: #4db6ac; -fx-text-fill: white; -fx-min-width: 100;"/>
+            <Button fx:id="checkOutButton" text="퇴실하기" onAction="#handleCheckOut" disable="true" style="-fx-background-color: #e57373; -fx-text-fill: white; -fx-min-width: 100;"/>
+        </HBox>
+        
+        <Separator/>
+
+        <HBox alignment="CENTER_LEFT" spacing="15">
+            <Label text="범례:" style="-fx-font-weight: bold;"/>
+            <Label text="사용 중" style="-fx-text-fill: #e57373; -fx-font-weight: bold;"/>
+            <Label text="예약 대기" style="-fx-text-fill: #ffb74d; -fx-font-weight: bold;"/>
+            <Label text="사용 가능" style="-fx-text-fill: #81c784; -fx-font-weight: bold;"/>
+        </HBox>
+        
+    </VBox>
 </AnchorPane>

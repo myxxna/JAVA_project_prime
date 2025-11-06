@@ -1,143 +1,76 @@
 package impl;
 
 import config.DBConnection;
-import interfaces.ISeatDAO;
 import model.Seat;
-
-import java.sql.*;
-import java.time.LocalDateTime;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SeatDAOImpl implements ISeatDAO {
+public class SeatDAOImpl {
 
-    @Override
     public List<Seat> getAllSeats() {
         List<Seat> seats = new ArrayList<>();
         String sql = "SELECT * FROM seats";
-        try (Connection conn = DBConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DBConnection.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            rs = pstmt.executeQuery();
 
             while (rs.next()) {
-                // (★수정★) 생성자가 아닌 Setter를 사용
                 Seat seat = new Seat();
                 seat.setId(rs.getInt("id"));
                 seat.setFloor(rs.getInt("floor"));
-                seat.setRoomNumber(rs.getString("room_index")); // (★수정★) room_number -> room_index
+                seat.setRoomNumber(rs.getString("room_index"));
                 seat.setSeatIndex(rs.getInt("seat_index"));
                 seat.setSeatNumber(rs.getString("seat_number"));
                 seat.setStatus(rs.getString("status"));
-                
-                int userId = rs.getInt("current_user_id"); // (★수정★) user_id -> current_user_id
-                if (rs.wasNull()) {
-                    seat.setCurrentUserId(null);
-                } else {
-                    seat.setCurrentUserId(userId);
-                }
-                
-                seat.setCurrentUserName(rs.getString("current_user_name"));
 
-                java.sql.Timestamp startTime = rs.getTimestamp("start_time");
-                seat.setStartTime(startTime != null ? startTime.toLocalDateTime() : null);
-                
-                java.sql.Timestamp endTime = rs.getTimestamp("end_time");
-                seat.setEndTime(endTime != null ? endTime.toLocalDateTime() : null);
-                
-                // (★수정★) rs.getBoolean("reserved") 삭제
-                
+                applyHardcodedLayout(seat);
+
                 seats.add(seat);
             }
-
         } catch (SQLException e) {
             e.printStackTrace();
+            System.err.println("SeatDAOImpl.getAllSeats() DB 오류: " + e.getMessage());
+        } finally {
+            DBConnection.close(conn, pstmt, rs);
         }
+
         return seats;
     }
 
-    @Override
-    public Seat getSeatById(int id) {
-        String sql = "SELECT * FROM seats WHERE id=?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    private void applyHardcodedLayout(Seat seat) {
+        switch (seat.getSeatNumber()) {
+            case "A1": seat.setRow(0); seat.setCol(0); break;
+            case "A2": seat.setRow(0); seat.setCol(1); break;
+            case "A3": seat.setRow(0); seat.setCol(2); break;
 
-            pstmt.setInt(1, id);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    // (★수정★) 생성자가 아닌 Setter를 사용
-                    Seat seat = new Seat();
-                    seat.setId(rs.getInt("id"));
-                    seat.setFloor(rs.getInt("floor"));
-                    seat.setRoomNumber(rs.getString("room_index")); // (★수정★) room_number -> room_index
-                    seat.setSeatIndex(rs.getInt("seat_index"));
-                    seat.setSeatNumber(rs.getString("seat_number"));
-                    seat.setStatus(rs.getString("status"));
-                    
-                    int userId = rs.getInt("current_user_id"); // (★수정★) user_id -> current_user_id
-                    if (rs.wasNull()) {
-                        seat.setCurrentUserId(null);
-                    } else {
-                        seat.setCurrentUserId(userId);
-                    }
-                    
-                    seat.setCurrentUserName(rs.getString("current_user_name"));
-    
-                    java.sql.Timestamp startTime = rs.getTimestamp("start_time");
-                    seat.setStartTime(startTime != null ? startTime.toLocalDateTime() : null);
-                    
-                    java.sql.Timestamp endTime = rs.getTimestamp("end_time");
-                    seat.setEndTime(endTime != null ? endTime.toLocalDateTime() : null);
-                    
-                    // (★수정★) rs.getBoolean("reserved") 삭제
-                    
-                    return seat;
-                }
-            }
+            case "A4": seat.setRow(1); seat.setCol(0); break;
+            case "A5": seat.setRow(1); seat.setCol(1); break;
 
-        } catch (SQLException e) {
-            e.printStackTrace();
+            case "B1": seat.setRow(2); seat.setCol(0); break;
+            case "B2": seat.setRow(2); seat.setCol(1); break;
+            case "B3": seat.setRow(2); seat.setCol(2); break;
+
+            case "B4": seat.setRow(3); seat.setCol(0); break;
+            case "B5": seat.setRow(3); seat.setCol(1); break;
+
+            case "C1": seat.setRow(4); seat.setCol(0); break;
+            case "C2": seat.setRow(4); seat.setCol(1); break;
+            case "C3": seat.setRow(4); seat.setCol(2); break;
+
+            case "C4": seat.setRow(5); seat.setCol(0); break;
+            case "C5": seat.setRow(5); seat.setCol(1); break;
+
+            default: seat.setRow(0); seat.setCol(0); break;
         }
-        return null;
-    }
-
-    @Override
-    public boolean updateSeat(Seat seat) {
-        // (★수정★) SeatService가 변경하는 컬럼들만 업데이트
-        String sql = "UPDATE seats SET status=?, current_user_id=?, current_user_name=?, start_time=?, end_time=? WHERE id=?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setString(1, seat.getStatus());
-            
-            // Integer (nullable)
-            if (seat.getCurrentUserId() == null) {
-                pstmt.setNull(2, java.sql.Types.INTEGER);
-            } else {
-                pstmt.setInt(2, seat.getCurrentUserId());
-            }
-            
-            pstmt.setString(3, seat.getCurrentUserName());
-            
-            // LocalDateTime (nullable)
-            if (seat.getStartTime() != null) {
-                pstmt.setTimestamp(4, Timestamp.valueOf(seat.getStartTime()));
-            } else {
-                pstmt.setNull(4, java.sql.Types.TIMESTAMP);
-            }
-            
-            if (seat.getEndTime() != null) {
-                pstmt.setTimestamp(5, Timestamp.valueOf(seat.getEndTime()));
-            } else {
-                pstmt.setNull(5, java.sql.Types.TIMESTAMP);
-            }
-            
-            pstmt.setInt(6, seat.getId());
-
-            return pstmt.executeUpdate() > 0;
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
     }
 }

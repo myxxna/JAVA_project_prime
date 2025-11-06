@@ -1,195 +1,486 @@
 package controller.kiosk;
 
-import java.net.URL;
-import java.util.ArrayList;
+import javafx.fxml.FXML;
+import javafx.scene.control.*;
+import javafx.scene.text.Text;
+import javafx.scene.layout.GridPane;
+import javafx.event.ActionEvent;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.util.Duration;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.Optional;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.ArrayList;
+import javafx.concurrent.Task;
+import javafx.application.Platform;
+import java.net.URL;
 import java.util.ResourceBundle;
 
-import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.fxml.Initializable;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.layout.GridPane;
-import javafx.stage.Stage;
+import service.ReservationService;
+import service.SeatService;
+import model.Seat;
+import model.Reservation;
+import model.Reservation.ReservationStatus;
 
-public class SeatController implements Initializable {
 
-    // --- FXML 요소들과 연결할 변수들 ---
-    
-    // 층 선택 버튼
-    @FXML private Button floor4Button;
-    @FXML private Button floor7Button;
+public class SeatController implements javafx.fxml.Initializable {
 
-    // 회의실/개인좌석 선택 버튼
-    @FXML private Button meetingRoom1Button;
-    @FXML private Button meetingRoom2Button; // "회의실 2" 버튼 추가
-    @FXML private Button individualSeatButton;
+    private static final int MAX_TOTAL_DURATION_MINUTES = 600;
 
-    // 좌석들을 담고 있는 컨테이너
+    private final ReservationService reservationService = new ReservationService();
+    private final SeatService seatService = new SeatService();
+
     @FXML private GridPane seatGrid;
+    @FXML private Text selectedSeatNumber;
+    @FXML private Text remainingTimeText;
+    @FXML private Button checkInButton;
+    @FXML private Button reserveButton;
+    @FXML private Button checkOutButton;
+    @FXML private Button extendButton;
+    @FXML private Button extend60Button;
 
-    // 각 좌석 버튼 리스트
-    private List<Button> seatButtons = new ArrayList<>();
-    
-    // 선택된 좌석 정보 라벨
-    @FXML private Label selectedSeatLabel;
+    private int selectedSeatId = -1;
+    private final String currentUserId = "C_Tester001";
+    private Timeline reservationTimeline;
+    private final Map<Integer, Button> seatButtons = new HashMap<>();
+    private int reserveDurationMinutes = 60;
 
-    // 홈으로 돌아가기 버튼
-    @FXML private Button homeButton;
-    
-    // 현재 선택된 좌석을 추적하기 위한 변수
-    private Button currentSelectedSeat = null;
 
- // --- 초기화 메서드 ---
     @Override
-    public void initialize(URL location, ResourceBundle resources) {
-        System.out.println("SeatController가 성공적으로 로드되었습니다.");
-        
-        // GridPane에서 좌석 버튼들을 찾아 리스트에 추가
-        if (seatGrid != null) {
-            seatGrid.getChildren().forEach(node -> {
-                if (node instanceof Button) {
-                    Button seatBtn = (Button) node;
-                    // FXML에 fx:id가 없는 좌석 버튼도 처리하도록 조건 변경
-                    // (텍스트가 숫자인 버튼들을 좌석 버튼으로 간주)
-                    try {
-                        Integer.parseInt(seatBtn.getText()); // 텍스트가 숫자로 변환되면 좌석 버튼
-                        seatButtons.add(seatBtn);
-                        seatBtn.setOnAction(event -> handleSeatSelection(seatBtn)); 
-                    } catch (NumberFormatException e) {
-                        // 숫자가 아닌 버튼 (예: 다른 컨트롤)은 무시
+    public void initialize(URL url, ResourceBundle rb) {
+        loadSeatsAsynchronously();
+
+        reservationTimeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> updateRemainingTime()));
+        reservationTimeline.setCycleCount(Timeline.INDEFINITE);
+        reservationTimeline.play();
+    }
+
+    private void loadSeatsAsynchronously() {
+        Task<List<Seat>> loadTask = new Task<>() {
+            @Override
+            protected List<Seat> call() throws Exception {
+                return seatService.getAllSeats();
+            }
+
+            @Override
+            protected void succeeded() {
+                List<Seat> seats = getValue();
+
+                Platform.runLater(() -> {
+                    seatGrid.getChildren().clear();
+                    for (Seat seat : seats) {
+                        Button seatButton = createSeatButton(seat);
+                        seatButtons.put(seat.getId(), seatButton);
+                        seatGrid.add(seatButton, seat.getCol(), seat.getRow());
                     }
+                    updateUIForUserStatus();
+                });
+            }
+
+            @Override
+            protected void failed() {
+                Throwable e = getException();
+                System.err.println("ERROR: 좌석 데이터 로드 실패: " + e.getMessage());
+                Platform.runLater(() -> showAlert("오류", "좌석 정보 로드에 실패했습니다: " + e.getMessage()));
+            }
+        };
+
+        new Thread(loadTask).start();
+    }
+
+    private Button createSeatButton(Seat seat) {
+        Button button = new Button(seat.getNumber());
+        button.setUserData(seat.getId());
+
+        button.setStyle("-fx-min-width: 60; -fx-min-height: 40; -fx-background-color: #90a4ae;");
+        button.setOnAction(this::handleSeatSelection);
+
+        return button;
+    }
+
+    private void updateUIForUserStatus() {
+        if (selectedSeatId != -1) {
+            Button selectedButton = seatButtons.get(selectedSeatId);
+            selectedSeatNumber.setText(selectedButton != null ? selectedButton.getText() : "선택됨");
+        } else {
+            selectedSeatNumber.setText("선택 전");
+        }
+
+        Reservation userActiveReservation = reservationService.findActiveReservationByUserId(currentUserId);
+
+        checkInButton.setDisable(true);
+        checkInButton.setText("입실하기");
+        checkOutButton.setDisable(true);
+        extendButton.setDisable(true);
+        extend60Button.setDisable(true);
+        reserveButton.setDisable(true);
+
+        if (userActiveReservation != null) {
+
+            if (userActiveReservation.getStatus() == ReservationStatus.PENDING) {
+                checkInButton.setDisable(false);
+                reserveButton.setText("예약 취소");
+                reserveButton.setDisable(false);
+
+            } else if (userActiveReservation.getStatus() == ReservationStatus.IN_USE) {
+                reserveButton.setText("좌석 예약");
+                reserveButton.setDisable(true);
+                checkOutButton.setDisable(false);
+                extendButton.setDisable(false);
+                extend60Button.setDisable(false);
+            }
+        }
+        else {
+            reserveButton.setText("좌석 예약 (" + (reserveDurationMinutes / 60) + "시간)");
+
+            if (selectedSeatId != -1) {
+                Reservation seatReservation = reservationService.getActiveReservationBySeatId(selectedSeatId);
+
+                if (seatReservation == null) {
+                    reserveButton.setDisable(false);
+                    checkInButton.setText("즉시 입실");
+                    checkInButton.setDisable(false);
+                } else {
+                    reserveButton.setDisable(true);
+                    checkInButton.setDisable(true);
+                }
+            }
+        }
+
+        updateSeatColorsAsynchronously();
+    }
+
+
+    @FXML
+    private void handleSeatSelection(ActionEvent event) {
+        Button selectedButton = (Button) event.getSource();
+
+        try {
+            selectedSeatId = (int) selectedButton.getUserData();
+        } catch (Exception e) {
+            showAlert("오류", "좌석 정보 로드 중 오류가 발생했습니다.");
+            e.printStackTrace();
+        }
+
+        updateUIForUserStatus();
+    }
+
+    @FXML
+    private void handleReservation(ActionEvent event) {
+        Reservation userActiveReservation = reservationService.findActiveReservationByUserId(currentUserId);
+
+        if (userActiveReservation != null && userActiveReservation.getStatus() == ReservationStatus.PENDING) {
+            if (showAlertConfirmation("예약 취소", "현재 예약된 좌석을 취소하시겠습니까?")) {
+                if (reservationService.cancelReservation(currentUserId)) {
+                    showAlert("성공", "예약이 취소되었습니다.");
+                } else {
+                    showAlert("실패", "예약 취소에 실패했습니다.");
+                }
+            }
+        } else {
+            if (selectedSeatId == -1) {
+                showAlert("경고", "예약할 좌석을 선택해 주십시오.");
+                return;
+            }
+
+            Reservation seatReservation = reservationService.getActiveReservationBySeatId(selectedSeatId);
+            if (seatReservation != null) {
+                showAlert("경고", selectedSeatNumber.getText() + "번 좌석은 현재 이용 중이거나 예약되어 있습니다.");
+                return;
+            }
+
+            Optional<Integer> duration = showDurationSelectionDialog();
+            if (duration.isEmpty()) {
+                return;
+            }
+
+            int finalDuration = duration.get();
+            reserveDurationMinutes = finalDuration;
+
+            if (showAlertConfirmation("좌석 예약", selectedSeatNumber.getText() + "번 좌석을 " + (finalDuration / 60) + "시간 예약하시겠습니까?")) {
+                if (reservationService.reserveSeat(currentUserId, selectedSeatId, finalDuration)) {
+                    showAlert("성공", selectedSeatNumber.getText() + "번 좌석 예약이 완료되었습니다. 10분 내에 입실해 주십시오.");
+                } else {
+                    showAlert("실패", "예약에 실패했습니다. (이미 활성 예약이 있거나 로직 오류)");
+                }
+            }
+        }
+        updateUIForUserStatus();
+    }
+
+    @FXML
+    private void handleCheckIn(ActionEvent event) {
+        Reservation userActiveReservation = reservationService.findActiveReservationByUserId(currentUserId);
+
+        if (userActiveReservation != null && userActiveReservation.getStatus() == ReservationStatus.PENDING) {
+            if (reservationService.checkIn(currentUserId)) {
+                showAlert("입실 완료", "좌석에 입실이 완료되었습니다. 즐거운 시간 되십시오.");
+            } else {
+                showAlert("입실 실패", "입실 처리에 실패했습니다. 다시 시도해 주십시오.");
+            }
+        }
+        else if (userActiveReservation == null && selectedSeatId != -1) {
+            Reservation seatReservation = reservationService.getActiveReservationBySeatId(selectedSeatId);
+
+            if (seatReservation != null) {
+                showAlert("경고", "선택된 좌석은 이미 사용 중이거나 예약되어 있습니다.");
+                return;
+            }
+
+            Optional<Integer> duration = showDurationSelectionDialog();
+            if (duration.isEmpty()) {
+                return;
+            }
+
+            int finalDuration = duration.get();
+
+            if (finalDuration > MAX_TOTAL_DURATION_MINUTES) {
+                showAlert("오류", "최대 이용 시간(" + (MAX_TOTAL_DURATION_MINUTES / 60) + "시간)을 초과하는 예약은 불가능합니다.");
+                return;
+            }
+
+            if (showAlertConfirmation("즉시 입실 확인", selectedSeatNumber.getText() + "번 좌석을 " + (finalDuration / 60) + "시간 사용 시작하시겠습니까?")) {
+                if (reservationService.reserveSeat(currentUserId, selectedSeatId, finalDuration)) {
+                    if (reservationService.checkIn(currentUserId)) {
+                        showAlert("즉시 입실 완료", selectedSeatNumber.getText() + "번 좌석 이용을 시작합니다.");
+                    } else {
+                        showAlert("입실 실패", "좌석 이용 시작에 실패했습니다.");
+                    }
+                } else {
+                    showAlert("입실 실패", "좌석 예약에 실패했습니다.");
+                }
+            }
+        }
+        else {
+            showAlert("경고", "입실 가능한 상태가 아닙니다. 좌석을 선택하거나 PENDING 예약을 확인하십시오.");
+        }
+
+        updateUIForUserStatus();
+    }
+
+    @FXML
+    private void handleCheckOut(ActionEvent event) {
+        Reservation userActiveReservation = reservationService.findActiveReservationByUserId(currentUserId);
+
+        if (userActiveReservation == null || userActiveReservation.getStatus() != ReservationStatus.IN_USE) {
+            showAlert("경고", "현재 이용 중인 좌석이 없습니다.");
+            return;
+        }
+
+        if (showAlertConfirmation("퇴실 확인", "현재 이용을 종료하고 퇴실하시겠습니까?")) {
+            if (reservationService.checkOut(userActiveReservation.getReservationId())) {
+                showAlert("퇴실 완료", "이용해 주셔서 감사합니다.");
+                remainingTimeText.setText("00:00:00");
+            } else {
+                showAlert("퇴실 실패", "퇴실 처리에 실패했습니다. 관리자에게 문의하십시오.");
+            }
+        }
+        updateUIForUserStatus();
+    }
+
+    @FXML
+    private void handleExtension(ActionEvent event) {
+        handleExtend(30);
+    }
+
+    @FXML
+    private void handleExtension60(ActionEvent event) {
+        handleExtend(60);
+    }
+
+    private void handleExtend(int minutes) {
+
+        Reservation userActiveReservation = reservationService.findActiveReservationByUserId(currentUserId);
+
+        if (userActiveReservation == null || userActiveReservation.getStatus() != ReservationStatus.IN_USE) {
+            showAlert("경고", "연장할 수 있는 이용 중인 좌석이 없습니다.");
+            return;
+        }
+
+        if (minutes > 60 || minutes <= 0) {
+            showAlert("오류", "연장 시간은 1분 이상 60분 이하만 가능합니다.");
+            return;
+        }
+
+
+        final int MAX_TOTAL_EXTENSION_MINUTES = 60;
+
+        int currentDuration = userActiveReservation.getDurationMinutes();
+        int initialDuration = userActiveReservation.getInitialDurationMinutes();
+
+        int totalExtendedTimeSoFar = currentDuration - initialDuration;
+
+        if (totalExtendedTimeSoFar + minutes > MAX_TOTAL_EXTENSION_MINUTES) {
+
+            if (totalExtendedTimeSoFar >= MAX_TOTAL_EXTENSION_MINUTES) {
+                showAlert("연장 불가", "총 연장 가능 시간(60분)을 모두 사용하셨습니다.");
+            } else {
+                showAlert("연장 오류", "총 연장 가능 시간은 60분입니다. (현재 " + totalExtendedTimeSoFar + "분 연장함)");
+            }
+            return;
+        }
+
+        if (currentDuration + minutes > MAX_TOTAL_DURATION_MINUTES) {
+            showAlert("연장 오류", "최대 이용 시간(" + (MAX_TOTAL_DURATION_MINUTES / 60) + "시간)을 초과할 수 없습니다. 현재 이용 시간: " + (currentDuration / 60) + "시간");
+            return;
+        }
+
+        int result = reservationService.extendReservation(userActiveReservation.getReservationId(), minutes);
+
+        if (result == 1) {
+            showAlert("연장 성공", minutes + "분 연장이 완료되었습니다.");
+        } else {
+            showAlert("연장 실패", "연장에 실패했습니다. 관리자에게 문의하십시오. (코드: " + result + ")");
+        }
+        updateUIForUserStatus();
+    }
+
+
+    private Optional<Integer> showDurationSelectionDialog() {
+        List<Integer> choices = List.of(60, 120, 180);
+
+        ChoiceDialog<Integer> dialog = new ChoiceDialog<>(60, choices);
+        dialog.setTitle("시간 선택");
+        dialog.setHeaderText("좌석 사용 시간을 선택해 주십시오.");
+        dialog.setContentText("시간 (분):");
+
+        ComboBox<Integer> comboBox = (ComboBox<Integer>) dialog.getDialogPane().lookup(".combo-box");
+        if (comboBox != null) {
+            comboBox.setConverter(new javafx.util.StringConverter<Integer>() {
+                @Override
+                public String toString(Integer duration) {
+                    return (duration / 60) + "시간";
+                }
+
+                @Override
+                public Integer fromString(String string) {
+                    return null;
                 }
             });
         }
-        
-        // 초기 설정: 이미지와 같이 '개인좌석' 버튼이 기본 선택되도록 변경
-        if(individualSeatButton != null) {
-            // 이전에 'selected-room-button'이 있다면 제거하고 다시 추가
-            individualSeatButton.getStyleClass().remove("selected-room-button");
-            individualSeatButton.getStyleClass().add("selected-room-button");
-        }
-        
-        // 초기 좌석 상태 로드 (DB 연동 등)
-        loadSeatStatus();
+
+        Optional<Integer> result = dialog.showAndWait();
+        return result.isPresent() ? result : Optional.empty();
     }
 
-    // --- 이벤트 핸들러 메서드 ---
+    private void updateRemainingTime() {
 
-    // 층 선택 버튼 (4층, 7층) 클릭 시 호출
-    @FXML
-    private void handleFloorSelection(javafx.event.ActionEvent event) {
-        Button clickedButton = (Button) event.getSource();
-        
-        // 모든 층 버튼의 'selected' 스타일 제거
-        floor4Button.getStyleClass().remove("selected-floor-button");
-        floor7Button.getStyleClass().remove("selected-floor-button");
-        
-        // 클릭된 버튼에 'selected' 스타일 추가
-        clickedButton.getStyleClass().add("selected-floor-button");
-        
-        String selectedFloor = clickedButton.getText().substring(0, 1);
-        System.out.println(selectedFloor + "층이 선택되었습니다.");
-        
-        updateSeatsForFloor(selectedFloor);
-    }
-    
-    // 회의실/개인좌석 선택 버튼 클릭 시 호출
-    @FXML
-    private void handleRoomSelection(javafx.event.ActionEvent event) {
-        Button clickedButton = (Button) event.getSource();
-        
-        // 모든 룸 타입 버튼의 'selected' 스타일 제거
-        meetingRoom1Button.getStyleClass().remove("selected-room-button");
-        meetingRoom2Button.getStyleClass().remove("selected-room-button"); // '회의실 2' 추가
-        individualSeatButton.getStyleClass().remove("selected-room-button");
-        
-        // 클릭된 버튼에 'selected' 스타일 추가
-        clickedButton.getStyleClass().add("selected-room-button");
-        
-        String selectedRoomType = clickedButton.getText();
-        System.out.println(selectedRoomType + "이 선택되었습니다.");
-        
-        filterSeatsByType(selectedRoomType);
-    }
-    
-    // 개별 좌석 버튼 클릭 시 호출
-    private void handleSeatSelection(Button clickedButton) {
-        // 이 좌석이 이미 사용 중인(occupied) 좌석인지 확인 (CSS 클래스 기준)
-        if (clickedButton.getStyleClass().contains("occupied-seat")) {
-            System.out.println("이미 사용 중인 좌석입니다.");
-            return; // 사용 중인 좌석은 선택 불가
-        }
+        Reservation reservationToShow = null;
+        String defaultText = "00:00:00";
 
-        // 이전에 선택했던 좌석이 있다면, 'selected-seat' 스타일 제거
-        if (currentSelectedSeat != null && currentSelectedSeat != clickedButton) {
-            currentSelectedSeat.getStyleClass().remove("selected-seat");
-            // 만약 이전에 선택했던 좌석이 'available-seat'였다면 다시 추가
-            if (!currentSelectedSeat.getStyleClass().contains("available-seat")) {
-                 currentSelectedSeat.getStyleClass().add("available-seat");
-            }
-        }
-        
-        // 현재 클릭한 좌석의 'available-seat' 스타일을 제거하고 'selected-seat' 스타일 추가
-        clickedButton.getStyleClass().remove("available-seat");
-        clickedButton.getStyleClass().add("selected-seat");
-        
-        // 현재 선택된 좌석을 이 버튼으로 업데이트
-        currentSelectedSeat = clickedButton;
+        if (selectedSeatId != -1) {
+            Reservation selectedSeatReservation = reservationService.getActiveReservationBySeatId(selectedSeatId);
 
-        String seatText = clickedButton.getText();
-        System.out.println("좌석 " + seatText + "이(가) 선택되었습니다.");
-        
-        // 상단 '좌석 01' 라벨 업데이트
-        if (selectedSeatLabel != null) {
-            selectedSeatLabel.setText("좌석 " + seatText);
-        }
-    }
-    
-    // 홈으로 돌아가기 버튼 클릭 시 호출
-    @FXML
-    private void handleHomeButton() {
-        try {
-            // LoginView.fxml 경로가 bin 폴더 기준이 아닌 src 폴더 기준으로 올바르게 되었는지 확인하세요.
-            // 보통 /view/kiosk/LoginView.fxml 입니다.
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/kiosk/LoginView.fxml")); 
-            Parent root = loader.load();
-            
-            Stage stage = (Stage) homeButton.getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.setTitle("로그인");
-            stage.show();
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.err.println("홈 화면으로 이동 중 오류 발생: " + e.getMessage());
-        }
-    }
-
-    // --- 보조 메서드 ---
-
-    private void loadSeatStatus() {
-        System.out.println("좌석 상태를 로드 중...");
-        for (Button seatBtn : seatButtons) {
-            boolean isOccupied = Math.random() < 0.3; // 30% 확률로 사용 중 (DB 연동 대체)
-            if (isOccupied) {
-                seatBtn.getStyleClass().add("occupied-seat");
-                // seatBtn.setDisable(true); // 클릭 자체를 막을 수도 있음
+            if (selectedSeatReservation != null) {
+                if (selectedSeatReservation.getStatus() == ReservationStatus.IN_USE) {
+                    reservationToShow = selectedSeatReservation;
+                } else if (selectedSeatReservation.getStatus() == ReservationStatus.PENDING) {
+                    defaultText = "예약 대기중";
+                }
             } else {
-                seatBtn.getStyleClass().add("available-seat");
+                defaultText = "00:00:00";
+            }
+        } else {
+            Reservation userActiveReservation = reservationService.findActiveReservationByUserId(currentUserId);
+            if (userActiveReservation != null) {
+                if (userActiveReservation.getStatus() == ReservationStatus.IN_USE) {
+                    reservationToShow = userActiveReservation;
+                } else if (userActiveReservation.getStatus() == ReservationStatus.PENDING) {
+                    defaultText = "입실 대기중";
+                }
             }
         }
+
+        if (reservationToShow != null) {
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime expectedEnd = reservationToShow.getExpectedEndTime();
+
+            long secondsRemaining = ChronoUnit.SECONDS.between(now, expectedEnd);
+
+            if (secondsRemaining <= 0) {
+                remainingTimeText.setText("00:00:00");
+                if (secondsRemaining < -5) {
+                    reservationService.checkOut(reservationToShow.getReservationId());
+                    updateUIForUserStatus();
+                }
+            } else {
+                long hours = secondsRemaining / 3600;
+                long minutes = (secondsRemaining % 3600) / 60;
+                long seconds = secondsRemaining % 60;
+
+                remainingTimeText.setText(String.format("%02d:%02d:%02d", hours, minutes, seconds));
+            }
+        } else {
+            remainingTimeText.setText(defaultText);
+        }
+
+        if (LocalDateTime.now().getSecond() % 5 == 0) {
+            updateSeatColorsAsynchronously();
+        }
     }
-    
-    private void updateSeatsForFloor(String floor) {
-        System.out.println(floor + "층 좌석으로 업데이트합니다.");
-        // TODO: DB에서 해당 층의 좌석 정보를 다시 loadSeatStatus() 같은 메서드로 불러오는 로직
+
+    private void updateSeatColorsAsynchronously() {
+
+        List<Integer> allSeatIds = new ArrayList<>(seatButtons.keySet());
+
+        Task<Map<Integer, Reservation>> colorUpdateTask = new Task<>() {
+            @Override
+            protected Map<Integer, Reservation> call() throws Exception {
+                Map<Integer, Reservation> seatStatusMap = new HashMap<>();
+                for (Integer seatId : allSeatIds) {
+                    Reservation status = reservationService.getActiveReservationBySeatId(seatId);
+                    seatStatusMap.put(seatId, status);
+                }
+                return seatStatusMap;
+            }
+
+            @Override
+            protected void succeeded() {
+                Map<Integer, Reservation> seatStatusMap = getValue();
+
+                for (Map.Entry<Integer, Button> entry : seatButtons.entrySet()) {
+                    int seatId = entry.getKey();
+                    Button btn = entry.getValue();
+                    Reservation status = seatStatusMap.get(seatId);
+
+                    if (status == null) {
+                        setButtonColor(btn, "#81c784");
+                    } else if (status.getStatus() == ReservationStatus.IN_USE) {
+                        setButtonColor(btn, "#e57373");
+                    } else if (status.getStatus() == ReservationStatus.PENDING) {
+                        setButtonColor(btn, "#ffb74d");
+                    } else {
+                        setButtonColor(btn, "#90a4ae");
+                    }
+                }
+            }
+        };
+
+        new Thread(colorUpdateTask).start();
     }
-    
-    private void filterSeatsByType(String roomType) {
-        System.out.println(roomType + " 타입 좌석으로 필터링합니다.");
-        // TODO: DB에서 해당 룸타입의 좌석 정보를 다시 불러오는 로직
+
+    private void setButtonColor(Button btn, String hexColor) {
+        btn.setStyle("-fx-min-width: 60; -fx-min-height: 40; -fx-background-color: " + hexColor + ";");
+    }
+
+    private void showAlert(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        Platform.runLater(alert::showAndWait);
+    }
+
+    private boolean showAlertConfirmation(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        Optional<ButtonType> result = alert.showAndWait();
+        return result.isPresent() && result.get() == ButtonType.OK;
     }
 }
