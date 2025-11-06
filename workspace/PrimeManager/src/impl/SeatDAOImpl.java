@@ -1,36 +1,76 @@
 package impl;
 
+import config.DBConnection;
 import model.Seat;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class SeatDAOImpl {
-    
-    private static final List<Seat> ALL_SEATS_DUMMY;
-    
-    static {
-        ALL_SEATS_DUMMY = new ArrayList<>();
-        // 15개 더미 좌석 데이터
-        ALL_SEATS_DUMMY.add(new Seat(1, "A1", 0, 0));
-        ALL_SEATS_DUMMY.add(new Seat(2, "A2", 0, 1));
-        ALL_SEATS_DUMMY.add(new Seat(3, "A3", 0, 2));
-        ALL_SEATS_DUMMY.add(new Seat(4, "A4", 1, 0));
-        ALL_SEATS_DUMMY.add(new Seat(5, "A5", 1, 1));
-        
-        ALL_SEATS_DUMMY.add(new Seat(6, "B1", 2, 0));
-        ALL_SEATS_DUMMY.add(new Seat(7, "B2", 2, 1));
-        ALL_SEATS_DUMMY.add(new Seat(8, "B3", 2, 2));
-        ALL_SEATS_DUMMY.add(new Seat(9, "B4", 3, 0));
-        ALL_SEATS_DUMMY.add(new Seat(10, "B5", 3, 1));
-        
-        ALL_SEATS_DUMMY.add(new Seat(11, "C1", 4, 0));
-        ALL_SEATS_DUMMY.add(new Seat(12, "C2", 4, 1));
-        ALL_SEATS_DUMMY.add(new Seat(13, "C3", 4, 2));
-        ALL_SEATS_DUMMY.add(new Seat(14, "C4", 5, 0));
-        ALL_SEATS_DUMMY.add(new Seat(15, "C5", 5, 1));
-    }
 
     public List<Seat> getAllSeats() {
-        return new ArrayList<>(ALL_SEATS_DUMMY);
+        List<Seat> seats = new ArrayList<>();
+        String sql = "SELECT * FROM seats";
+
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DBConnection.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                Seat seat = new Seat();
+                seat.setId(rs.getInt("id"));
+                seat.setFloor(rs.getInt("floor"));
+                seat.setRoomNumber(rs.getString("room_index"));
+                seat.setSeatIndex(rs.getInt("seat_index"));
+                seat.setSeatNumber(rs.getString("seat_number"));
+                seat.setStatus(rs.getString("status"));
+
+                applyHardcodedLayout(seat);
+
+                seats.add(seat);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.err.println("SeatDAOImpl.getAllSeats() DB 오류: " + e.getMessage());
+        } finally {
+            DBConnection.close(conn, pstmt, rs);
+        }
+
+        return seats;
+    }
+
+    private void applyHardcodedLayout(Seat seat) {
+        switch (seat.getSeatNumber()) {
+            case "A1": seat.setRow(0); seat.setCol(0); break;
+            case "A2": seat.setRow(0); seat.setCol(1); break;
+            case "A3": seat.setRow(0); seat.setCol(2); break;
+
+            case "A4": seat.setRow(1); seat.setCol(0); break;
+            case "A5": seat.setRow(1); seat.setCol(1); break;
+
+            case "B1": seat.setRow(2); seat.setCol(0); break;
+            case "B2": seat.setRow(2); seat.setCol(1); break;
+            case "B3": seat.setRow(2); seat.setCol(2); break;
+
+            case "B4": seat.setRow(3); seat.setCol(0); break;
+            case "B5": seat.setRow(3); seat.setCol(1); break;
+
+            case "C1": seat.setRow(4); seat.setCol(0); break;
+            case "C2": seat.setRow(4); seat.setCol(1); break;
+            case "C3": seat.setRow(4); seat.setCol(2); break;
+
+            case "C4": seat.setRow(5); seat.setCol(0); break;
+            case "C5": seat.setRow(5); seat.setCol(1); break;
+
+            default: seat.setRow(0); seat.setCol(0); break;
+        }
     }
 }
