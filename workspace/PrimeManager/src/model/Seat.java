@@ -2,64 +2,45 @@ package model;
 
 import java.time.LocalDateTime;
 
-// ★ Admin과 Kiosk 기능을 통합한 Seat 모델 ★
 public class Seat {
 
-    // --- 공통 필드 ---
     private int id;
-    private String number; // Kiosk(number), Admin(seat_number) 공통 사용
+    private String number;
 
-    // --- Kiosk용 필드 (Grid) ---
     private int row;
     private int col;
 
-    // --- Admin용 필드 (DB) ---
     private int floor;
-    private String roomNumber;  // (AdminDAOImpl은 room_index를 사용)
+    private String roomNumber;
     private int seatIndex;
     private String status;
-    private Integer currentUserId; // ★ null을 허용하기 위해 Integer 타입으로 변경
+    private Integer currentUserId;
     private String currentUserName;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
 
-    // --- 생성자 ---
-
-    /**
-     * AdminDAOImpl에서 DB로부터 좌석 정보를 매핑할 때 사용
-     * (new Seat())
-     */
     public Seat() {
     }
 
-    /**
-     * Kiosk의 SeatDAOImpl에서 더미 데이터를 생성할 때 사용
-     * (new Seat(1, "A1", 0, 0))
-     */
     public Seat(int id, String number, int row, int col) {
         this.id = id;
         this.number = number;
         this.row = row;
         this.col = col;
-        this.status = "G"; // Kiosk용 좌석도 기본 상태를 'G'로 설정
+        this.status = "G";
     }
 
-    // --- Getter 및 Setter ---
-
-    // ID (공통)
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
 
-    // Seat Number (공통)
-    public String getNumber() { return number; } // Kiosk (SeatController)
-    public String getSeatNumber() { return number; } // Admin (AdminController)
-    public void setSeatNumber(String number) { this.number = number; } // Admin (AdminDAOImpl)
+    public String getNumber() { return number; }
+    public String getSeatNumber() { return number; }
+    public void setSeatNumber(String number) { this.number = number; }
 
-    // Kiosk 필드
     public int getRow() { return row; }
+    public void setRow(int row) { this.row = row; }
     public int getCol() { return col; }
-
-    // Admin 필드 (AdminDAOImpl + AdminController에서 필요)
+    public void setCol(int col) { this.col = col; }
 
     public int getFloor() { return floor; }
     public void setFloor(int floor) { this.floor = floor; }

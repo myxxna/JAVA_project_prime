@@ -372,25 +372,24 @@ public class SeatController implements javafx.fxml.Initializable {
         Reservation reservationToShow = null;
         String defaultText = "00:00:00";
 
-        Reservation selectedSeatReservation = null;
         if (selectedSeatId != -1) {
-            selectedSeatReservation = reservationService.getActiveReservationBySeatId(selectedSeatId);
-        }
+            Reservation selectedSeatReservation = reservationService.getActiveReservationBySeatId(selectedSeatId);
 
-        if (selectedSeatReservation != null && selectedSeatReservation.getStatus() == ReservationStatus.IN_USE) {
-            reservationToShow = selectedSeatReservation;
-        }
-        else if (selectedSeatReservation != null && selectedSeatReservation.getStatus() == ReservationStatus.PENDING) {
-            defaultText = "예약 대기중";
-        }
-        else {
+            if (selectedSeatReservation != null) {
+                if (selectedSeatReservation.getStatus() == ReservationStatus.IN_USE) {
+                    reservationToShow = selectedSeatReservation;
+                } else if (selectedSeatReservation.getStatus() == ReservationStatus.PENDING) {
+                    defaultText = "예약 대기중";
+                }
+            } else {
+                defaultText = "00:00:00";
+            }
+        } else {
             Reservation userActiveReservation = reservationService.findActiveReservationByUserId(currentUserId);
-
             if (userActiveReservation != null) {
                 if (userActiveReservation.getStatus() == ReservationStatus.IN_USE) {
                     reservationToShow = userActiveReservation;
-                }
-                else if (userActiveReservation.getStatus() == ReservationStatus.PENDING) {
+                } else if (userActiveReservation.getStatus() == ReservationStatus.PENDING) {
                     defaultText = "입실 대기중";
                 }
             }
