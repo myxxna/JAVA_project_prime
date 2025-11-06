@@ -29,7 +29,7 @@ public class UserService {
         
         // 1. ID와 PW를 모두 DAO에 전달하여 DB에서 동시 검증 및 User 정보 획득
         // (findUserByIdAndPwd는 ID와 PW가 모두 맞을 때만 User 객체를 반환합니다.)
-        User user = userDAO.findUserByIdAndPwd(userId, inputPassword);
+        User user = userDAO.login(userId, inputPassword);
         
         // 2. 비밀번호 정보를 메모리에서 지웁니다 (보안 강화)
         Arrays.fill(password, ' '); 
