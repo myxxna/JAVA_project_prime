@@ -49,6 +49,8 @@ public class SeatController implements javafx.fxml.Initializable {
     private final Map<Integer, Button> seatButtons = new HashMap<>();
     private int reserveDurationMinutes = 60;
 
+    private Map<Integer, Reservation> activeReservationCache = new HashMap<>();
+
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -78,6 +80,7 @@ public class SeatController implements javafx.fxml.Initializable {
                         seatGrid.add(seatButton, seat.getCol(), seat.getRow());
                     }
                     updateUIForUserStatus();
+                    updateSeatColorsAsynchronously();
                 });
             }
 
@@ -138,7 +141,7 @@ public class SeatController implements javafx.fxml.Initializable {
             reserveButton.setText("좌석 예약 (" + (reserveDurationMinutes / 60) + "시간)");
 
             if (selectedSeatId != -1) {
-                Reservation seatReservation = reservationService.getActiveReservationBySeatId(selectedSeatId);
+                Reservation seatReservation = this.activeReservationCache.get(selectedSeatId);
 
                 if (seatReservation == null) {
                     reserveButton.setDisable(false);
@@ -150,8 +153,6 @@ public class SeatController implements javafx.fxml.Initializable {
                 }
             }
         }
-
-        updateSeatColorsAsynchronously();
     }
 
 
@@ -167,6 +168,7 @@ public class SeatController implements javafx.fxml.Initializable {
         }
 
         updateUIForUserStatus();
+        updateRemainingTime();
     }
 
     @FXML
@@ -187,7 +189,7 @@ public class SeatController implements javafx.fxml.Initializable {
                 return;
             }
 
-            Reservation seatReservation = reservationService.getActiveReservationBySeatId(selectedSeatId);
+            Reservation seatReservation = this.activeReservationCache.get(selectedSeatId);
             if (seatReservation != null) {
                 showAlert("경고", selectedSeatNumber.getText() + "번 좌석은 현재 이용 중이거나 예약되어 있습니다.");
                 return;
@@ -210,6 +212,7 @@ public class SeatController implements javafx.fxml.Initializable {
             }
         }
         updateUIForUserStatus();
+        updateSeatColorsAsynchronously();
     }
 
     @FXML
@@ -224,7 +227,7 @@ public class SeatController implements javafx.fxml.Initializable {
             }
         }
         else if (userActiveReservation == null && selectedSeatId != -1) {
-            Reservation seatReservation = reservationService.getActiveReservationBySeatId(selectedSeatId);
+            Reservation seatReservation = this.activeReservationCache.get(selectedSeatId);
 
             if (seatReservation != null) {
                 showAlert("경고", "선택된 좌석은 이미 사용 중이거나 예약되어 있습니다.");
@@ -260,6 +263,7 @@ public class SeatController implements javafx.fxml.Initializable {
         }
 
         updateUIForUserStatus();
+        updateSeatColorsAsynchronously();
     }
 
     @FXML
@@ -280,6 +284,7 @@ public class SeatController implements javafx.fxml.Initializable {
             }
         }
         updateUIForUserStatus();
+        updateSeatColorsAsynchronously();
     }
 
     @FXML
@@ -337,6 +342,7 @@ public class SeatController implements javafx.fxml.Initializable {
             showAlert("연장 실패", "연장에 실패했습니다. 관리자에게 문의하십시오. (코드: " + result + ")");
         }
         updateUIForUserStatus();
+        updateSeatColorsAsynchronously();
     }
 
 
@@ -373,7 +379,7 @@ public class SeatController implements javafx.fxml.Initializable {
         String defaultText = "00:00:00";
 
         if (selectedSeatId != -1) {
-            Reservation selectedSeatReservation = reservationService.getActiveReservationBySeatId(selectedSeatId);
+            Reservation selectedSeatReservation = this.activeReservationCache.get(selectedSeatId);
 
             if (selectedSeatReservation != null) {
                 if (selectedSeatReservation.getStatus() == ReservationStatus.IN_USE) {
@@ -385,7 +391,11 @@ public class SeatController implements javafx.fxml.Initializable {
                 defaultText = "00:00:00";
             }
         } else {
-            Reservation userActiveReservation = reservationService.findActiveReservationByUserId(currentUserId);
+            Reservation userActiveReservation = this.activeReservationCache.values().stream()
+                    .filter(r -> r.getUserId().equals(currentUserId))
+                    .findFirst()
+                    .orElse(null);
+
             if (userActiveReservation != null) {
                 if (userActiveReservation.getStatus() == ReservationStatus.IN_USE) {
                     reservationToShow = userActiveReservation;
@@ -405,7 +415,7 @@ public class SeatController implements javafx.fxml.Initializable {
                 remainingTimeText.setText("00:00:00");
                 if (secondsRemaining < -5) {
                     reservationService.checkOut(reservationToShow.getReservationId());
-                    updateUIForUserStatus();
+                    updateSeatColorsAsynchronously();
                 }
             } else {
                 long hours = secondsRemaining / 3600;
@@ -425,27 +435,20 @@ public class SeatController implements javafx.fxml.Initializable {
 
     private void updateSeatColorsAsynchronously() {
 
-        List<Integer> allSeatIds = new ArrayList<>(seatButtons.keySet());
-
         Task<Map<Integer, Reservation>> colorUpdateTask = new Task<>() {
             @Override
             protected Map<Integer, Reservation> call() throws Exception {
-                Map<Integer, Reservation> seatStatusMap = new HashMap<>();
-                for (Integer seatId : allSeatIds) {
-                    Reservation status = reservationService.getActiveReservationBySeatId(seatId);
-                    seatStatusMap.put(seatId, status);
-                }
-                return seatStatusMap;
+                return reservationService.getAllActiveSeatReservations();
             }
 
             @Override
             protected void succeeded() {
-                Map<Integer, Reservation> seatStatusMap = getValue();
+                activeReservationCache = getValue();
 
                 for (Map.Entry<Integer, Button> entry : seatButtons.entrySet()) {
                     int seatId = entry.getKey();
                     Button btn = entry.getValue();
-                    Reservation status = seatStatusMap.get(seatId);
+                    Reservation status = activeReservationCache.get(seatId);
 
                     if (status == null) {
                         setButtonColor(btn, "#81c784");
@@ -457,6 +460,12 @@ public class SeatController implements javafx.fxml.Initializable {
                         setButtonColor(btn, "#90a4ae");
                     }
                 }
+            }
+
+            @Override
+            protected void failed() {
+                System.err.println("좌석 색상 업데이트 실패");
+                getException().printStackTrace();
             }
         };
 
