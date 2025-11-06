@@ -47,6 +47,10 @@ public class LoginController {
 
     private UserService userService = new UserService();
     public static User currentUser; 
+    
+    public static User getCurrentLoggedInUser() {
+        return currentUser;
+    }
 
     @FXML
     private void handleLoginButtonAction(ActionEvent event) {
