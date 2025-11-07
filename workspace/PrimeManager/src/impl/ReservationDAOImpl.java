@@ -10,6 +10,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ReservationDAOImpl implements IReservationDAO {
 
@@ -280,5 +282,49 @@ public class ReservationDAOImpl implements IReservationDAO {
         } finally {
             DBConnection.close(conn, pstmt);
         }
+    }
+
+    @Override
+    public Map<Integer, Reservation> getAllActiveSeatReservations() {
+        Map<Integer, Reservation> activeReservations = new HashMap<>();
+        String sql = "SELECT * FROM seats WHERE status = 'IN_USE' OR status = 'PENDING'";
+
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DBConnection.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                int durationMinutes = 0;
+                if(rs.getTimestamp("start_time") != null && rs.getTimestamp("end_time") != null) {
+                    durationMinutes = (int) java.time.Duration.between(
+                            rs.getTimestamp("start_time").toLocalDateTime(),
+                            rs.getTimestamp("end_time").toLocalDateTime()
+                    ).toMinutes();
+                }
+
+                Reservation r = new Reservation(
+                        String.valueOf(rs.getInt("current_user_id")),
+                        rs.getInt("id"),
+                        rs.getTimestamp("start_time") != null ? rs.getTimestamp("start_time").toLocalDateTime() : LocalDateTime.now(),
+                        durationMinutes
+                );
+
+                r.setExpectedEndTime(rs.getTimestamp("end_time").toLocalDateTime());
+                r.setStatus(ReservationStatus.valueOf(rs.getString("status")));
+
+                activeReservations.put(r.getSeatId(), r);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.err.println("getAllActiveSeatReservations DB 오류: " + e.getMessage());
+        } finally {
+            DBConnection.close(conn, pstmt, rs);
+        }
+        return activeReservations;
     }
 }

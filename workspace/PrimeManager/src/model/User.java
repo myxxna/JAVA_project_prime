@@ -16,9 +16,7 @@ public class User {
         this.id = id;
         this.penaltyCount = penaltyCount; 
         this.studentId = studentId;
-        this.name = name;
-
-     
+        this.name = name; 
         this.role = role;
         this.password = password;
         this.role = role;

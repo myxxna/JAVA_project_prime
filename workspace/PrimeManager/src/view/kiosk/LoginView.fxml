@@ -34,43 +34,7 @@
                  -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.22), 18, 0, 0, 6);
                  -fx-padding: 36px 48px;"
           maxWidth="520" maxHeight="420" minWidth="420" minHeight="320">
-<<<<<<< HEAD
 
-        <!-- 제목 (굵게) -->
-        <Label text="로그인"
-               style="-fx-font-weight: bold; -fx-font-size: 28px; -fx-text-fill: #000000;" />
-
-        <!-- 폼 (라벨도 bold) -->
-        <GridPane hgap="18" vgap="16" alignment="CENTER">
-            <Label text="학번"
-                   GridPane.columnIndex="0" GridPane.rowIndex="0"
-                   style="-fx-font-weight: bold; -fx-font-size: 16px;" />
-            <TextField fx:id="studentIdField"
-                       GridPane.columnIndex="1" GridPane.rowIndex="0"
-                       promptText="학번을 입력하세요"
-                       style="-fx-pref-width: 300px; -fx-pref-height: 42px; -fx-font-size: 15px;
-                              -fx-background-color: #F1F3F5; -fx-background-radius: 8px;" />
-
-            <Label text="비밀번호"
-                   GridPane.columnIndex="0" GridPane.rowIndex="1"
-                   style="-fx-font-weight: bold; -fx-font-size: 16px;" />
-            <PasswordField fx:id="passwordField"
-                           GridPane.columnIndex="1" GridPane.rowIndex="1"
-                           promptText="비밀번호를 입력하세요"
-                           style="-fx-pref-width: 300px; -fx-pref-height: 42px; -fx-font-size: 15px;
-                                  -fx-background-color: #F1F3F5; -fx-background-radius: 8px;" />
-        </GridPane>
-
-        <!-- 완료 버튼 (굵게) -->
-        <Button fx:id="loginButton" onAction="#handleLoginButtonAction" text="완료"
-                style="-fx-background-color: #4C6EF5; -fx-text-fill: white;
-                       -fx-font-weight: bold; -fx-font-size: 16px;
-                       -fx-pref-width: 220px; -fx-pref-height: 44px;
-                       -fx-background-radius: 8px; -fx-cursor: hand;" />
-
-    </VBox>
-</StackPane>
-=======
 
         <!-- 제목 (굵게) -->
         <Label text="로그인"
@@ -108,4 +72,3 @@
     </VBox>
 </StackPane>
 
->>>>>>> main

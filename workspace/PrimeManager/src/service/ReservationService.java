@@ -4,6 +4,7 @@ import impl.ReservationDAOImpl;
 import interfaces.IReservationDAO;
 import model.Reservation;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 public class ReservationService {
 
@@ -43,4 +44,7 @@ public class ReservationService {
         return reservationDAO.findActiveReservationBySeatId(seatId);
     }
 
+    public Map<Integer, Reservation> getAllActiveSeatReservations() {
+        return reservationDAO.getAllActiveSeatReservations();
+    }
 }
