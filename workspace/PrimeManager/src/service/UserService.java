@@ -7,7 +7,7 @@ import model.User;
 import java.util.Arrays; // Arrays.fill 사용을 위해 추가
 
 public class UserService {
-
+	
     // 💡 인터페이스 대신 구현체로 선언하여 findUserByIdAndPwd 메서드에 접근 용이하게 함
     private UserDAOImpl userDAO = new UserDAOImpl(); 
     public static final int MAX_PENALTY_COUNT = 3;
@@ -49,5 +49,39 @@ public class UserService {
         
         // 5. 인증 성공 및 접근 허용
         return user;
+        
     }
+   
+   public boolean isStudentIdExists(String studentId) {
+       // userDAOImpl에 학번 존재 여부를 확인하는 메서드가 필요합니다.
+       // 예를 들어, userDAO.isIdExists(studentId)를 호출합니다.
+       return userDAO.isIdExists(studentId); 
+   }
+
+   /**
+    * 💡 [추가] 새로운 사용자를 등록하고 초기값을 설정합니다.
+    * @param studentId 학번
+    * @param name 이름
+    * @param password 비밀번호 (평문)
+    * @return 등록 성공 시 true, 실패 시 false
+    */
+   public boolean registerUser(String studentId, String name, String password) {
+       // 1. 새로운 User 객체 생성 및 초기값 설정
+       User newUser = new User();
+       newUser.setStudentId(studentId);
+       newUser.setName(name);
+       newUser.setPassword(password); // ★DAO에서 DB 저장 전에 해시 처리해야 합니다★
+       newUser.setRole("USER"); // 기본 역할은 USER
+       newUser.setPenaltyCount(0); // 기본 패널티는 0
+       
+       // 2. DAO를 통해 DB에 저장
+       // userDAOImpl에 User 객체를 받아 저장하는 save 메서드가 필요합니다.
+       boolean success = userDAO.save(newUser);
+       
+       // 3. 비밀번호 정보 메모리에서 지우기 (보안)
+       // (참고: 입력된 비밀번호는 Controller에서 String으로 처리되었으므로, 
+       //  Controller나 이 메서드 외부에서 메모리 관리가 필요할 수 있습니다.)
+
+       return success;
+   }
 }

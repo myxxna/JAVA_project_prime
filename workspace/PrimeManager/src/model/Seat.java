@@ -26,6 +26,8 @@ public class Seat {
         this.id = id;
         this.number = number;
         this.row = row;
+        this.floor = floor;
+        
         this.col = col;
         this.status = "G";
     }
