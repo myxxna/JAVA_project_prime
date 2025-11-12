@@ -9,7 +9,8 @@ public class User {
     private int penaltyCount;// 👈 관리자 여부를 판단할 필드 추가
 
     // ✅ UserDAOImpl에서 호출할 새로운 생성자 (5개 필드)
-
+    public User() {
+    }
     // (★수정 2★) 생성자에서 email 파라미터 삭제
     public User(int id, int penaltyCount, String studentId, String name, /*String email,*/ String role, String password) {
 

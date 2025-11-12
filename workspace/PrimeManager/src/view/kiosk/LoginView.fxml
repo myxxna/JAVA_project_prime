@@ -63,12 +63,27 @@
         </GridPane>
 
         <!-- 완료 버튼 (굵게) -->
-        <Button fx:id="loginButton" onAction="#handleLoginButtonAction" text="완료"
+        <Button fx:id="loginButton" onAction="#handleLoginButtonAction" text="완료" defaultButton="true"
                 style="-fx-background-color: #4C6EF5; -fx-text-fill: white;
                        -fx-font-weight: bold; -fx-font-size: 16px;
                        -fx-pref-width: 220px; -fx-pref-height: 44px;
                        -fx-background-radius: 8px; -fx-cursor: hand;" />
+       
+
+		
+		<Button fx:id="signupLinkButton" onAction="#handleSignupLinkAction" text="회원가입"
+                    style="-fx-background-color: transparent; /* 배경색 투명 */
+                           -fx-text-fill: #616262; /* 글씨색을 진한 회색으로 */
+                           -fx-font-weight: normal; /* 볼드체 제거 */
+                           -fx-font-size: 14px; /* 폰트 크기 조정 */
+                           -fx-border-color: transparent; /* 테두리 투명 */
+                           -fx-cursor: hand; /* 커서 변경 */
+                           -fx-underline: false; /* 밑줄 제거 */"
+                           onMouseEntered="#handleSignupLinkEnter"
+                           onMouseExited="#handleSignupLinkExit"/>
+
 
     </VBox>
 </StackPane>
+
 
