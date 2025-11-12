@@ -168,9 +168,9 @@ public class LoginController {
         };
 
         scene.addEventFilter(MouseEvent.ANY, activityHandler);
-        // ▼▼▼▼▼ [★ 여기가 수정된 부분 ★] ▼▼▼▼▼
+        
         scene.addEventFilter(KeyEvent.ANY, activityHandler);
-        // ▲▲▲▲▲ [★ 수정 완료 ★] ▲▲▲▲▲
+        
     }
 
 
