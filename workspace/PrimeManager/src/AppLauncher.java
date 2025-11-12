@@ -11,11 +11,11 @@ public class AppLauncher extends Application {
     @Override
     public void start(Stage primaryStage) throws IOException {
         try {
-            Parent root = FXMLLoader.load(getClass().getResource("view/kiosk/LoginView.fxml"));
+            Parent root = FXMLLoader.load(getClass().getResource("view/kiosk/LoginView.fxml")); 
             
             Scene scene = new Scene(root, 900, 650); 
             
-            primaryStage.setTitle("스터디 카페 키오스크");
+            primaryStage.setTitle("키오스크");
             primaryStage.setScene(scene);
             primaryStage.show();
             

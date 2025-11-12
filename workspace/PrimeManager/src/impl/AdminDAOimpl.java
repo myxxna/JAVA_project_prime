@@ -12,16 +12,35 @@ import java.time.LocalDateTime; // ★추가: DB Timestamp를 Java LocalDateTime
 import java.util.ArrayList;
 import java.util.List;
 
+<<<<<<< Updated upstream
+<<<<<<< HEAD
+public class AdminDAOimpl  {
+	
+    // --- 층/방 목록 조회 메서드 (수정 없음) ---
+
+=======
 /**
  * 관리자 기능(Admin Service)에 필요한 모든 데이터베이스 접근 객체(DAO) 구현 클래스입니다.
  * seats, users, penalty 테이블에 대한 CRUD 작업을 수행합니다.
  */
 public class AdminDAOimpl {
 
+=======
+/**
+ * 관리자 기능(Admin Service)에 필요한 모든 데이터베이스 접근 객체(DAO) 구현 클래스입니다.
+ * seats, users, penalty 테이블에 대한 CRUD 작업을 수행합니다.
+ */
+public class AdminDAOimpl {
+
+>>>>>>> Stashed changes
     /**
      * DB에서 중복되지 않는 모든 층(floor) 목록을 조회합니다.
      * @return 층 번호(Integer) 리스트
      */
+<<<<<<< Updated upstream
+>>>>>>> main
+=======
+>>>>>>> Stashed changes
     public List<Integer> getUniqueFloors() {
         List<Integer> floors = new ArrayList<>();
         String sql = "SELECT DISTINCT floor FROM seats ORDER BY floor";
