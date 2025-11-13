@@ -63,7 +63,7 @@ public class MainMenuController {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
             Parent root = loader.load();
             
-            Scene scene = new Scene(root, 1920, 1080);
+            Scene scene = new Scene(root, 1400,800);
             
             // Inter 폰트 등이 적용된 CSS 로드
             

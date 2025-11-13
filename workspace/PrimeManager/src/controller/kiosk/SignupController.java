@@ -73,8 +73,8 @@ public class SignupController {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/kiosk/LoginView.fxml"));
             Parent root = loader.load();
             
-            // 👇 [수정 1] Scene 생성 시 크기를 1920, 1080으로 변경
-            Scene scene = new Scene(root, 1920, 1080); 
+            // 👇 [수정 1] Scene 생성 시 크기를 1400,800으로 변경
+            Scene scene = new Scene(root, 1400,800); 
             
             stage.setTitle("키오스크"); 
             stage.setScene(scene);
@@ -94,10 +94,10 @@ public class SignupController {
     }
 
     // --- 👇 [수정 2] FXML과 동일한 195px, 55px, 20px 크기로 스타일 상수 변경 ---
-    private final String SIGNUP_BUTTON_STYLE_DEFAULT = "-fx-background-color: #3366FF; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 20px; -fx-pref-width: 195px; -fx-pref-height: 55px; -fx-background-radius: 10px; -fx-cursor: hand;";
-    private final String SIGNUP_BUTTON_STYLE_HOVER = "-fx-background-color: #2851CC; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 20px; -fx-pref-width: 195px; -fx-pref-height: 55px; -fx-background-radius: 10px; -fx-cursor: hand;";
-    private final String CANCEL_BUTTON_STYLE_DEFAULT = "-fx-background-color: #ADB5BD; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 20px; -fx-pref-width: 195px; -fx-pref-height: 55px; -fx-background-radius: 10px; -fx-cursor: hand;";
-    private final String CANCEL_BUTTON_STYLE_HOVER = "-fx-background-color: #868E96; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 20px; -fx-pref-width: 195px; -fx-pref-height: 55px; -fx-background-radius: 10px; -fx-cursor: hand;";
+    private final String SIGNUP_BUTTON_STYLE_DEFAULT = "-fx-background-color: #3366FF; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 20px; -fx-pref-width: 195px; -fx-pref-height: 45px; -fx-background-radius: 10px; -fx-cursor: hand;";
+    private final String SIGNUP_BUTTON_STYLE_HOVER = "-fx-background-color: #2851CC; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 20px; -fx-pref-width: 195px; -fx-pref-height: 45px; -fx-background-radius: 10px; -fx-cursor: hand;";
+    private final String CANCEL_BUTTON_STYLE_DEFAULT = "-fx-background-color: #ADB5BD; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 20px; -fx-pref-width: 195px; -fx-pref-height: 45px; -fx-background-radius: 10px; -fx-cursor: hand;";
+    private final String CANCEL_BUTTON_STYLE_HOVER = "-fx-background-color: #868E96; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 20px; -fx-pref-width: 195px; -fx-pref-height: 45px; -fx-background-radius: 10px; -fx-cursor: hand;";
 
     @FXML
     private void handleSignupEnter(MouseEvent event) {

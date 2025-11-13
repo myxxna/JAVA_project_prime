@@ -60,13 +60,14 @@ public class LoginController {
     @FXML
     private void handleSignupLinkAction(ActionEvent event) {
         try {
+        	
             Stage stage = (Stage) ((Node)event.getSource()).getScene().getWindow();
             
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/kiosk/SignupView.fxml"));
             Parent root = loader.load();
             
             
-            Scene scene = new Scene(root, 1920,1080);
+            Scene scene = new Scene(root, 1400,800);
             
             stage.setTitle("회원가입");
             stage.setScene(scene);
@@ -138,7 +139,7 @@ public class LoginController {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
             Parent root = loader.load();
             
-            Scene scene = new Scene(root,1920,1080);
+            Scene scene = new Scene(root,1400,800);
            
             stage.setTitle(title);
             

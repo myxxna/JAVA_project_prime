@@ -9,12 +9,12 @@
 <StackPane xmlns="http://javafx.com/javafx/21"
            xmlns:fx="http://javafx.com/fxml/1"
            fx:controller="controller.kiosk.MainMenuController"
-           prefWidth="1920" prefHeight="1080"
+           prefWidth="1400" prefHeight="800"
            style="-fx-background-color: #FFFFFF;">
 
     <VBox StackPane.alignment="CENTER"
           alignment="CENTER" spacing="25"
-          maxWidth="900" maxHeight="600"
+          maxWidth="700" maxHeight="400"
           style="-fx-background-color: #F8F8FC;
                  -fx-background-radius: 15px;
                  -fx-border-radius: 15px;
@@ -26,20 +26,20 @@
 
         <Button fx:id="checkInButton" onAction="#handleCheckInButtonAction" text="입실/퇴실하기 >"
                 style="-fx-background-color: #3366FF; -fx-text-fill: white;
-                       -fx-font-weight: bold; -fx-font-size: 32px;
-                       -fx-pref-width: 450px; -fx-pref-height: 80px;
+                       -fx-font-weight: bold; -fx-font-size: 24px;
+                       -fx-pref-width: 350px; -fx-pref-height: 60px;
                        -fx-background-radius: 10px; -fx-cursor: hand;" />
 
         <Button fx:id="reserveButton" onAction="#handleReserveButtonAction" text="예약하기 >"
                 style="-fx-background-color: #3366FF; -fx-text-fill: white;
-                       -fx-font-weight: bold; -fx-font-size: 32px;
-                       -fx-pref-width: 450px; -fx-pref-height: 80px;
+                       -fx-font-weight: bold; -fx-font-size: 24px;
+                       -fx-pref-width: 350px; -fx-pref-height: 60px;
                        -fx-background-radius: 10px; -fx-cursor: hand;" />
                        
         <Button fx:id="extendButton" onAction="#handleExtendButtonAction" text="연장하기 >"
                 style="-fx-background-color: #3366FF; -fx-text-fill: white;
-                       -fx-font-weight: bold; -fx-font-size: 32px;
-                       -fx-pref-width: 450px; -fx-pref-height: 80px;
+                       -fx-font-weight: bold; -fx-font-size: 24px;
+                       -fx-pref-width: 350px; -fx-pref-height: 60px;
                        -fx-background-radius: 10px; -fx-cursor: hand;" />
 
         <VBox.margin>
