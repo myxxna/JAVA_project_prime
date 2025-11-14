@@ -1,89 +1,88 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.image.Image?>
-<?import javafx.scene.image.ImageView?>
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
-<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.geometry.HPos?>
 
 <StackPane xmlns="http://javafx.com/javafx/21"
            xmlns:fx="http://javafx.com/fxml/1"
            fx:controller="controller.kiosk.LoginController"
-           prefWidth="1920" prefHeight="1080">
+           prefWidth="1400" prefHeight="800"
+           style="-fx-background-color: #FFFFFF;">
 
-    <!-- 배경 이미지: 여기 URL을 직접 이미지 파일 주소로 바꾸세요 -->
-    <ImageView fitWidth="1920" fitHeight="1080" preserveRatio="false">
-        <image>
-            <!-- 반드시 직접 이미지 파일 주소 (예: https://.../campus.jpg) 로 교체 -->
-            <Image url="https://search.pstatic.net/common/?src=https%3A%2F%2Fldb-phinf.pstatic.net%2F20241120_43%2F1732066328968qQdxe_JPEG%2F1._%25B5%25BF%25C0%25C7%25B4%25EB%25C7%25D0%25B1%25B3_%25C0%25FC%25B0%25E6_%25BB%25F6%25BC%25F6%25C1%25A4_%25BF%25EB%25B7%25AE_%25C1%25B6%25C0%25FD.jpg" />
-        </image>
-    </ImageView>
-
-    <!-- 로그인 카드: StackPane 내부에서 중앙 정렬 -->
     <VBox StackPane.alignment="CENTER"
-          alignment="CENTER" spacing="24"
-          style="-fx-background-color: rgba(255,255,255,0.92);
-                 -fx-border-color: rgba(0,0,0,0.85);
-                 -fx-border-width: 1.2;
-                 -fx-border-radius: 12px;
-                 -fx-background-radius: 12px;
-                 -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.22), 18, 0, 0, 6);
-                 -fx-padding: 36px 48px;"
-          maxWidth="520" maxHeight="420" minWidth="420" minHeight="320">
+          alignment="CENTER" spacing="40"
+          maxWidth="700" maxHeight="400"
+          style="-fx-background-color: #F8F8FC;
+                 -fx-background-radius: 15px;
+                 -fx-border-radius: 15px;
+                 -fx-border-color: #EAEAEA;
+                 -fx-border-width: 1px;
+                 -fx-font-family: 'Inter';
+                 -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 25, 0, 0, 8);
+                 -fx-padding: 40px;">
 
-
-        <!-- 제목 (굵게) -->
         <Label text="로그인"
-               style="-fx-font-weight: bold; -fx-font-size: 28px; -fx-text-fill: #000000;" />
+               style="-fx-font-size: 40px; -fx-font-weight: bold; -fx-text-fill: #222222;" />
+        <VBox.margin>
+            <Insets bottom="10" />
+        </VBox.margin>
 
-        <!-- 폼 (라벨도 bold) -->
-        <GridPane hgap="18" vgap="16" alignment="CENTER">
+        <GridPane hgap="25" vgap="25" alignment="CENTER">
+            
+            <columnConstraints>
+                <ColumnConstraints halignment="RIGHT" prefWidth="120"/>
+                <ColumnConstraints prefWidth="260"/>
+            </columnConstraints>
+            
             <Label text="학번"
                    GridPane.columnIndex="0" GridPane.rowIndex="0"
-                   style="-fx-font-weight: bold; -fx-font-size: 16px;" />
+                   style="-fx-font-size: 24px; -fx-text-fill: #444444;" />
+            
             <TextField fx:id="studentIdField"
                        GridPane.columnIndex="1" GridPane.rowIndex="0"
                        promptText="학번을 입력하세요"
-                       style="-fx-pref-width: 300px; -fx-pref-height: 42px; -fx-font-size: 15px;
-                              -fx-background-color: #F1F3F5; -fx-background-radius: 8px;" />
-
-
+                       style="-fx-pref-width: 300px; -fx-pref-height: 45px; -fx-font-size: 18px; -fx-min-height: 45px;
+                              -fx-background-color: #F3F4F6; -fx-background-radius: 10px;
+                              -fx-border-color: #D1D5DB; -fx-border-radius: 10px; -fx-border-width: 1.5px;
+                              -fx-padding: 0 15px;" />
+            
             <Label text="비밀번호"
                    GridPane.columnIndex="0" GridPane.rowIndex="1"
-                   style="-fx-font-weight: bold; -fx-font-size: 16px;" />
+                   style="-fx-font-size: 24px; -fx-text-fill: #444444;" />
+            
             <PasswordField fx:id="passwordField"
                            GridPane.columnIndex="1" GridPane.rowIndex="1"
                            promptText="비밀번호를 입력하세요"
-                           style="-fx-pref-width: 300px; -fx-pref-height: 42px; -fx-font-size: 15px;
-                                  -fx-background-color: #F1F3F5; -fx-background-radius: 8px;" />
+                           style="-fx-pref-width: 300px; -fx-pref-height: 45px; -fx-font-size: 18px; -fx-min-height: 45px;
+                                  -fx-background-color: #F3F4F6; -fx-background-radius: 10px;
+                                  -fx-border-color: #D1D5DB; -fx-border-radius: 10px; -fx-border-width: 1.5px;
+                                  -fx-padding: 0 15px;" />
         </GridPane>
 
-        <!-- 완료 버튼 (굵게) -->
+        <VBox.margin>
+            <Insets top="20" /> </VBox.margin>
+        
         <Button fx:id="loginButton" onAction="#handleLoginButtonAction" text="완료" defaultButton="true"
-                style="-fx-background-color: #4C6EF5; -fx-text-fill: white;
-                       -fx-font-weight: bold; -fx-font-size: 16px;
-                       -fx-pref-width: 220px; -fx-pref-height: 44px;
-                       -fx-background-radius: 8px; -fx-cursor: hand;" />
+                style="-fx-background-color: #3366FF; -fx-text-fill: white;
+                       -fx-font-weight: bold; -fx-font-size: 20px;
+                       -fx-pref-width: 400px; -fx-pref-height: 40px; -fx-min-height: 40px;
+                       -fx-background-radius: 10px; -fx-cursor: hand;" />
        
-
-		
-		<Button fx:id="signupLinkButton" onAction="#handleSignupLinkAction" text="회원가입"
-                    style="-fx-background-color: transparent; /* 배경색 투명 */
-                           -fx-text-fill: #616262; /* 글씨색을 진한 회색으로 */
-                           -fx-font-weight: normal; /* 볼드체 제거 */
-                           -fx-font-size: 14px; /* 폰트 크기 조정 */
-                           -fx-border-color: transparent; /* 테두리 투명 */
-                           -fx-cursor: hand; /* 커서 변경 */
-                           -fx-underline: false; /* 밑줄 제거 */"
-                           onMouseEntered="#handleSignupLinkEnter"
-                           onMouseExited="#handleSignupLinkExit"/>
-
+        <VBox.margin>
+            <Insets top="15" /> </VBox.margin>
+        
+        <Button fx:id="signupLinkButton" onAction="#handleSignupLinkAction" text="회원가입"
+                    style="-fx-background-color: transparent; -fx-text-fill: #888888; -fx-font-size: 16px; -fx-cursor: hand; -fx-underline: false;"
+                    onMouseEntered="#handleSignupLinkEnter"
+                    onMouseExited="#handleSignupLinkExit"/>
 
     </VBox>
 </StackPane>
-
-

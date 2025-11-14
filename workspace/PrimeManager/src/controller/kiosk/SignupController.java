@@ -1,4 +1,3 @@
-// controller/kiosk/SignupController.java
 package controller.kiosk;
 
 import java.io.IOException;
@@ -74,15 +73,11 @@ public class SignupController {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/kiosk/LoginView.fxml"));
             Parent root = loader.load();
             
-            // 👇👇👇 [수정] Scene 생성 시 AppLauncher와 동일하게 크기를 900, 650으로 고정합니다. 👇👇👇
-            Scene scene = new Scene(root, 900, 650); 
+            // 👇 [수정 1] Scene 생성 시 크기를 1400,800으로 변경
+            Scene scene = new Scene(root, 1400,800); 
             
-            stage.setTitle("키오스크"); // 👈 제목도 AppLauncher와 동일하게 "키오스크"로 변경
+            stage.setTitle("키오스크"); 
             stage.setScene(scene);
-            
-            // 👇👇👇 [수정] stage.sizeToScene()을 제거해야 창 크기가 유지됩니다. 👇👇👇
-            // stage.sizeToScene(); // (제거)
-            stage.centerOnScreen(); // (중앙 정렬은 유지)
             
             stage.show();
         } catch (IOException e) {
@@ -98,11 +93,11 @@ public class SignupController {
         alert.showAndWait();
     }
 
-    // --- (이하 호버 효과 메서드들은 동일) ---
-    private final String SIGNUP_BUTTON_STYLE_DEFAULT = "-fx-background-color: #4C6EF5; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16px; -fx-pref-width: 150px; -fx-pref-height: 44px; -fx-background-radius: 8px; -fx-cursor: hand; -fx-border-color: #3C5ADB; -fx-border-width: 1px; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 2);";
-    private final String SIGNUP_BUTTON_STYLE_HOVER = "-fx-background-color: #3C5ADB; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16px; -fx-pref-width: 150px; -fx-pref-height: 44px; -fx-background-radius: 8px; -fx-cursor: hand; -fx-border-color: #3C5ADB; -fx-border-width: 1px; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 8, 0, 0, 3);";
-    private final String CANCEL_BUTTON_STYLE_DEFAULT = "-fx-background-color: #ADB5BD; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16px; -fx-pref-width: 150px; -fx-pref-height: 44px; -fx-background-radius: 8px; -fx-cursor: hand; -fx-border-color: #92979E; -fx-border-width: 1px; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 2);";
-    private final String CANCEL_BUTTON_STYLE_HOVER = "-fx-background-color: #92979E; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16px; -fx-pref-width: 150px; -fx-pref-height: 44px; -fx-background-radius: 8px; -fx-cursor: hand; -fx-border-color: #92979E; -fx-border-width: 1px; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 8, 0, 0, 3);";
+    // --- 👇 [수정 2] FXML과 동일한 195px, 55px, 20px 크기로 스타일 상수 변경 ---
+    private final String SIGNUP_BUTTON_STYLE_DEFAULT = "-fx-background-color: #3366FF; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 20px; -fx-pref-width: 195px; -fx-pref-height: 45px; -fx-background-radius: 10px; -fx-cursor: hand;";
+    private final String SIGNUP_BUTTON_STYLE_HOVER = "-fx-background-color: #2851CC; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 20px; -fx-pref-width: 195px; -fx-pref-height: 45px; -fx-background-radius: 10px; -fx-cursor: hand;";
+    private final String CANCEL_BUTTON_STYLE_DEFAULT = "-fx-background-color: #ADB5BD; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 20px; -fx-pref-width: 195px; -fx-pref-height: 45px; -fx-background-radius: 10px; -fx-cursor: hand;";
+    private final String CANCEL_BUTTON_STYLE_HOVER = "-fx-background-color: #868E96; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 20px; -fx-pref-width: 195px; -fx-pref-height: 45px; -fx-background-radius: 10px; -fx-cursor: hand;";
 
     @FXML
     private void handleSignupEnter(MouseEvent event) {

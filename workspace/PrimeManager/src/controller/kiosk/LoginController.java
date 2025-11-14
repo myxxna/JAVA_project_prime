@@ -1,43 +1,45 @@
 package controller.kiosk;
 
-import javafx.application.Platform; 
-
 import java.io.IOException;
 import java.util.Arrays;
-import javafx.scene.input.MouseEvent;
+
 import javafx.animation.KeyFrame;
+import javafx.animation.PauseTransition;
 import javafx.animation.Timeline;
-import javafx.application.Platform;
+import javafx.application.Platform; // 중복 제거됨
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Node; 
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.input.MouseEvent;
+import javafx.scene.input.MouseEvent; // 중복 제거됨
+import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import model.User;
 import service.UserService;
-import javafx.animation.PauseTransition;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.layout.VBox;
-import javafx.stage.Modality; 
-import javafx.scene.control.Label;
-import javafx.scene.Node; // (★필수★) Stage를 가져오기 위해 Node import
 
 public class LoginController {
-	private final String SIGNUP_LINK_STYLE_DEFAULT = "-fx-background-color: transparent; -fx-text-fill: #616262; -fx-font-weight: normal; -fx-font-size: 14px; -fx-border-color: transparent; -fx-cursor: hand; -fx-underline: false;";
-    // 마우스 오버 시 스타일 (파란색, 밑줄)
-    private final String SIGNUP_LINK_STYLE_HOVER = "-fx-background-color: transparent; -fx-text-fill: #4C6EF5; -fx-font-weight: normal; -fx-font-size: 14px; -fx-border-color: transparent; -fx-cursor: hand; -fx-underline: true;";
+    
+    // 스타일: 기본 색상은 회색(#888888), 폰트 13px
+    private final String SIGNUP_LINK_STYLE_DEFAULT = "-fx-background-color: transparent; -fx-text-fill: #888888; -fx-font-weight: normal; -fx-font-size: 16px; -fx-border-color: transparent; -fx-cursor: hand; -fx-underline: false;";
+    
+    // 스타일: 호버 색상은 완료 버튼과 같은 파란색(#3366FF), 폰트 13px
+    private final String SIGNUP_LINK_STYLE_HOVER = "-fx-background-color: transparent; -fx-text-fill: #3366FF; -fx-font-weight: normal; -fx-font-size: 16px; -fx-border-color: transparent; -fx-cursor: hand; -fx-underline: true;";
+    
     private static final int INACTIVITY_TIMEOUT_MS = 300000; // 5분
     private static Timeline logoutTimer;
     private static Stage currentPrimaryStage; 
@@ -54,20 +56,25 @@ public class LoginController {
     public static User getCurrentLoggedInUser() {
         return currentUser;
     }
+
     @FXML
     private void handleSignupLinkAction(ActionEvent event) {
         try {
-            // 1. 현재 Stage를 가져옴
+        	
             Stage stage = (Stage) ((Node)event.getSource()).getScene().getWindow();
             
-            // 2. SignupView.fxml 로드 (★경로를 /view/kiosk/SignupView.fxml로 가정합니다.)
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/kiosk/SignupView.fxml"));
             Parent root = loader.load();
             
-            // 3. Scene 설정 및 전환
-            Scene scene = new Scene(root);
+            
+            Scene scene = new Scene(root, 1400,800);
+            
             stage.setTitle("회원가입");
             stage.setScene(scene);
+            
+            // 창 크기 고정이므로 sizeToScene() 불필요
+            stage.centerOnScreen(); // 필요 시 추가
+            
             stage.show();
             
         } catch (IOException e) {
@@ -79,6 +86,7 @@ public class LoginController {
             fatalError.showAndWait();
         }
     }
+
     @FXML
     private void handleLoginButtonAction(ActionEvent event) {
         String userId = studentIdField.getText();
@@ -88,8 +96,6 @@ public class LoginController {
         Arrays.fill(password, ' ');
 
         if (authenticatedUser != null) {
-            
-            // (★수정★) DB 스키마에 맞게 'role'이 아닌 'penalty_count'를 직접 확인
             if (authenticatedUser.getPenaltyCount() >= UserService.MAX_PENALTY_COUNT) {
                 Alert penaltyAlert = new Alert(AlertType.ERROR);
                 penaltyAlert.setTitle("로그인 실패");
@@ -106,7 +112,6 @@ public class LoginController {
                     adminAlert.setContentText(currentUser.getName() + " 관리자님, 시스템으로 진입합니다.");
                     adminAlert.showAndWait();
                     
-                    // (★수정★) event를 loadNextScene으로 전달
                     loadNextScene(event, "/view/admin/AdminView.fxml", "관리자 시스템"); 
                 } else {
                     Alert successAlert = new Alert(AlertType.INFORMATION);
@@ -115,8 +120,7 @@ public class LoginController {
                     successAlert.setContentText(currentUser.getName() + "님, 좌석 예약 시스템에 오신 것을 환영합니다!");
                     successAlert.showAndWait();
                     
-                    // (★수정★) event를 loadNextScene으로 전달
-                    loadNextScene(event, "/view/kiosk/SeatMapView.fxml", "좌석 예약 시스템");
+                    loadNextScene(event, "/view/kiosk/MainMenuView.fxml", "좌석 예약 시스템");
                 }
             }
         } else {
@@ -129,36 +133,27 @@ public class LoginController {
         }
     }
     
-    /**
-     * (★수정★) FXML 로드 및 Scene 전환, 창 최대화 로직 추가
-     */
     private void loadNextScene(ActionEvent event, String fxmlPath, String title) {
         try {
-            // 1. 현재 Stage를 가져옴
             Stage stage = (Stage) ((Node)event.getSource()).getScene().getWindow();
-            
-            // 2. FXML 로드
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
             Parent root = loader.load();
             
-            // 3. Scene 생성 및 설정
-            Scene scene = new Scene(root);
+            Scene scene = new Scene(root,1400,800);
+           
             stage.setTitle(title);
             
-            // (★이것이 해결책입니다★)
             if (fxmlPath.contains("/admin/")) {
-                stage.setMaximized(true); // 창 최대화
-                stage.setResizable(true);  // 크기 조절 가능하게 (필수)
+                
+                stage.setResizable(true);
             } else {
-                stage.setMaximized(false); 
-                stage.setResizable(false); // 키오스크는 크기 고정
-                stage.centerOnScreen();
+                
+                stage.setResizable(false);
+             
             }
 
             stage.setScene(scene);
-            
             setupAutoLogout(scene, stage); 
-
             stage.show();
             
         } catch (IOException e) {
@@ -171,10 +166,6 @@ public class LoginController {
         }
     }
     
-    // ----------------------------------------------------
-    // (이하 자동 로그아웃 코드는 동일)
-    // ----------------------------------------------------
-
     public static void setLoggedInUser(User user) {
         currentUser = user;
     }
@@ -209,7 +200,6 @@ public class LoginController {
     
     
     private static void performLogout() {
-        
         if (isLogoutInProgress) {
             return; 
         }
@@ -246,7 +236,10 @@ public class LoginController {
                         FXMLLoader loader = new FXMLLoader(LoginController.class.getResource("/view/kiosk/LoginView.fxml"));
                         Parent root = loader.load();
                         
-                        Scene newScene = new Scene(root);
+                       
+                        Scene newScene = new Scene(root, 1920, 1080);
+                        
+                        currentPrimaryStage.setTitle("키오스크"); // 👈 제목 복구
                         currentPrimaryStage.setScene(newScene);
                         currentPrimaryStage.show();
                         
@@ -264,6 +257,7 @@ public class LoginController {
             }
         });
     }
+
     @FXML
     private void handleSignupLinkEnter(MouseEvent event) {
         if (signupLinkButton != null) {
