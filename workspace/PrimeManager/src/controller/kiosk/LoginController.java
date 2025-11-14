@@ -204,6 +204,7 @@ public class LoginController {
 
         scene.addEventFilter(MouseEvent.ANY, activityHandler);
         scene.addEventFilter(KeyEvent.ANY, activityHandler);
+
     }
     
     
