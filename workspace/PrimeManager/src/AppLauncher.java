@@ -13,7 +13,7 @@ public class AppLauncher extends Application {
         try {
             Parent root = FXMLLoader.load(getClass().getResource("view/kiosk/LoginView.fxml")); 
             
-            Scene scene = new Scene(root, 900, 650); 
+            Scene scene = new Scene(root, 1400, 800); 
             
             primaryStage.setTitle("키오스크");
             primaryStage.setScene(scene);

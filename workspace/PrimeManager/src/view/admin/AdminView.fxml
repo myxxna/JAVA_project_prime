@@ -5,7 +5,6 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.ScrollPane?>
-<?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TableColumn?>
@@ -14,104 +13,119 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.TilePane?>
 <?import javafx.scene.layout.VBox?>
-<?import javafx.scene.paint.Color?>
-<?import javafx.scene.shape.Rectangle?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane prefHeight="800.0" prefWidth="1400.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.admin.AdminController">
+<BorderPane fx:id="adminRootPane" prefHeight="800.0" prefWidth="1400.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.admin.AdminController">
    <top>
       <Label text="관리자 페이지" BorderPane.alignment="CENTER">
          <font>
             <Font size="24.0" />
          </font>
+         <BorderPane.margin>
+            <Insets bottom="10.0" top="10.0" />
+         </BorderPane.margin>
       </Label>
    </top>
    
    <center>
-      <ScrollPane fitToWidth="true" fitToHeight="true">
-         <TabPane tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
-           <tabs>
-           
-             <Tab text="좌석 현황 관리">
-                 <content>
-                   <SplitPane dividerPositions="0.8" orientation="VERTICAL"> 
-                       <items>
-                           <SplitPane dividerPositions="0.25">
-                              <items>
-                                  <VBox spacing="5.0" style="-fx-padding: 5;">
-                                      <Label text="층 선택:" style="-fx-font-weight: bold;" />
-                                      <ListView fx:id="floorListView" prefHeight="200.0" VBox.vgrow="ALWAYS" />
-                                      <Label text="룸 선택:" style="-fx-font-weight: bold; -fx-padding: 10 0 0 0;" />
-                                      <ListView fx:id="roomListView" prefHeight="400.0" VBox.vgrow="ALWAYS" />
-                                  </VBox>
-                                  <ScrollPane fitToWidth="true" fitToHeight="true">
-                                      <GridPane fx:id="visualSeatGrid" alignment="CENTER" hgap="10" vgap="10">
-                                          <padding>
-                                              <Insets top="20" right="20" bottom="20" left="20" />
-                                          </padding>
-                                      </GridPane>
-                                  </ScrollPane>
-                              </items>
-                           </SplitPane>
-                           
-                           <VBox spacing="10.0" style="-fx-padding: 15;">
-                                <Label text="--- 좌석 선택 후 관리 ---" style="-fx-font-weight: bold;" />
-                                <Label fx:id="selectedSeatLabel" text="먼저 좌석을 클릭하세요." style="-fx-text-fill: blue;" />
-                                <HBox spacing="10.0" alignment="CENTER_LEFT">
-                                   <Label text="패널티/퇴실 사유 (필요시 입력):" />
-                                   <TextField fx:id="actionField" promptText="사유 입력" prefWidth="300.0" />
-                                </HBox>
-                                <HBox spacing="10.0">
-                                   <Button fx:id="penaltyButton" text="선택 좌석에 패널티 부여" onAction="#handlePenalty" />
-                                   <Button fx:id="ejectButton" text="선택 좌석 강제 퇴실" onAction="#handleEject" style="-fx-background-color: #FF6666;" />
-                                   <Button fx:id="toggleBrokenButton" text="좌석 점검/사용 가능" onAction="#handleToggleBroken" style="-fx-background-color: #FFA500;" />
-                                </HBox>
+      <TabPane tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER" style="-fx-background-color: #f4f4f4;">
+         <tabs>
+            <Tab text="좌석 현황 관리">
+               <content>
+                  <HBox>
+                     <VBox spacing="20.0" style="-fx-background-color: #f0f0f0; -fx-padding: 20;" prefWidth="280.0" minWidth="280.0">
+                        
+                        <VBox spacing="10.0" style="-fx-background-color: #ffffff; -fx-padding: 15; -fx-background-radius: 10; -fx-border-color: #e0e0e0; -fx-border-radius: 10;">
+                           <Label text="층 선택">
+                              <font><Font name="System Bold" size="14.0" /></font>
+                           </Label>
+                           <TilePane fx:id="floorButtonContainer" hgap="10.0" vgap="10.0" prefColumns="2" tileAlignment="TOP_LEFT" />
+                        </VBox>
+                        
+                        <VBox spacing="10.0" style="-fx-background-color: #ffffff; -fx-padding: 15; -fx-background-radius: 10; -fx-border-color: #e0e0e0; -fx-border-radius: 10;" VBox.vgrow="ALWAYS">
+                           <Label text="룸 선택">
+                              <font><Font name="System Bold" size="14.0" /></font>
+                           </Label>
+                           <ScrollPane fitToWidth="true" hbarPolicy="NEVER" style="-fx-background: #ffffff; -fx-background-color: transparent;">
+                              <VBox fx:id="roomButtonContainer" spacing="10.0" style="-fx-background-color: transparent;" />
+                           </ScrollPane>
+                        </VBox>
+                     </VBox>
+                     
+                     <BorderPane HBox.hgrow="ALWAYS" style="-fx-background-color: #ffffff;">
+                        <center>
+                           <ScrollPane fitToHeight="true" fitToWidth="true" style="-fx-background: #ffffff; -fx-background-color: transparent;">
+                              <GridPane fx:id="visualSeatGrid" alignment="CENTER" hgap="15" vgap="15">
+                                 <padding>
+                                    <Insets bottom="30" left="30" right="30" top="30" />
+                                 </padding>
+                              </GridPane>
+                           </ScrollPane>
+                        </center>
+                        
+                        <bottom>
+                           <VBox spacing="10.0" style="-fx-padding: 15; -fx-background-color: #ffffff; -fx-border-color: #cccccc; -fx-border-width: 1 0 0 0;">
+                              <HBox alignment="CENTER_LEFT" spacing="15.0">
+                                 <Label text="선택된 좌석:" style="-fx-font-weight: bold; -fx-font-size: 14px;" />
+                                 <Label fx:id="selectedSeatLabel" text="좌석을 클릭하세요" style="-fx-text-fill: #0078d7; -fx-font-size: 14px;" />
+                              </HBox>
+                              
+                              <HBox alignment="CENTER_LEFT" spacing="10.0">
+                                 <Label text="사유:" />
+                                 <TextField fx:id="actionField" promptText="패널티/퇴실 사유 입력" prefWidth="250.0" />
+                                 
+                                 <Button fx:id="penaltyButton" text="패널티 부여" onAction="#handlePenalty" 
+                                         style="-fx-background-color: #d9534f; -fx-text-fill: white; -fx-font-weight: bold;" />
+                                 <Button fx:id="ejectButton" text="강제 퇴실" onAction="#handleEject" 
+                                         style="-fx-background-color: #f0ad4e; -fx-text-fill: white; -fx-font-weight: bold;" />
+                                 <Button fx:id="toggleBrokenButton" text="점검/사용 설정" onAction="#handleToggleBroken" 
+                                         style="-fx-background-color: #5bc0de; -fx-text-fill: white; -fx-font-weight: bold;" />
+                              </HBox>
                            </VBox>
-                       </items>
-                   </SplitPane>
-                 </content>
-             </Tab>
-             
-             <Tab text="신고 목록">
-                  <content>
-                     <TableView fx:id="reportTable"> 
-                        <columns>
-                           <TableColumn fx:id="reportSeatIdCol" prefWidth="100.0" text="신고 좌석" />
-                           <TableColumn fx:id="reportStudentIdCol" prefWidth="120.0" text="신고자 학번" />
-                           <TableColumn fx:id="reportStudentNameCol" prefWidth="120.0" text="신고자 이름" />
-                           <TableColumn fx:id="reportReasonCol" prefWidth="300.0" text="신고 사유" />
-                           <TableColumn fx:id="reportTimeCol" prefWidth="200.0" text="신고 시각" />
-                           <TableColumn fx:id="reportActionCol" prefWidth="120.0" text="조치" />
-                        </columns>
-                     </TableView>
-                  </content>
-             </Tab>
+                        </bottom>
+                     </BorderPane>
+                  </HBox>
+               </content>
+            </Tab>
+            
+            <Tab text="신고 목록 (사용자)">
+               <content>
+                  <TableView fx:id="reportTable">
+                     <columns>
+                        <TableColumn fx:id="reportSeatIdCol" prefWidth="80.0" text="좌석" />
+                        <TableColumn fx:id="reportStudentIdCol" prefWidth="120.0" text="신고자 학번" />
+                        <TableColumn fx:id="reportStudentNameCol" prefWidth="100.0" text="이름" />
+                        <TableColumn fx:id="reportReasonCol" prefWidth="400.0" text="내용" />
+                        <TableColumn fx:id="reportTimeCol" prefWidth="180.0" text="시각" />
+                        <TableColumn fx:id="reportActionCol" prefWidth="100.0" text="조치" />
+                     </columns>
+                  </TableView>
+               </content>
+            </Tab>
 
-             <Tab text="패널티 관리 목록">
-                 <content>
-                     <TableView fx:id="adminPenaltyTable">
-                        <columns>
-                           <TableColumn fx:id="adminPenaltySeatIdCol" prefWidth="100.0" text="패널티 좌석" />
-                           <TableColumn fx:id="adminPenaltyStudentIdCol" prefWidth="120.0" text="대상자 학번" />
-                           <TableColumn fx:id="adminPenaltyStudentNameCol" prefWidth="120.0" text="대상자 이름" />
-                           <TableColumn fx:id="adminPenaltyReasonCol" prefWidth="300.0" text="패널티 사유" />
-                           <TableColumn fx:id="adminPenaltyTimeCol" prefWidth="200.0" text="부여 시각" />
-                        </columns>
-                     </TableView>
-                 </content>
-             </Tab>
-
-             <Tab text="시간 초과자 목록">
-                 <content>
-                     <ListView fx:id="overdueUserList" />
-                 </content>
-             </Tab>
-             
-           </tabs>
-         </TabPane>
-      </ScrollPane>
+            <Tab text="패널티 부여 내역 (관리자)">
+               <content>
+                  <TableView fx:id="adminPenaltyTable">
+                     <columns>
+                        <TableColumn fx:id="adminPenaltySeatIdCol" prefWidth="80.0" text="좌석" />
+                        <TableColumn fx:id="adminPenaltyStudentIdCol" prefWidth="120.0" text="대상자 학번" />
+                        <TableColumn fx:id="adminPenaltyStudentNameCol" prefWidth="100.0" text="이름" />
+                        <TableColumn fx:id="adminPenaltyReasonCol" prefWidth="400.0" text="사유" />
+                        <TableColumn fx:id="adminPenaltyTimeCol" prefWidth="180.0" text="시각" />
+                     </columns>
+                  </TableView>
+               </content>
+            </Tab>
+            
+            <Tab text="시간 초과자 목록">
+               <content>
+                   <ListView fx:id="overdueUserList" />
+               </content>
+            </Tab>
+            
+         </tabs>
+      </TabPane>
    </center>
-   
-   </BorderPane>
+</BorderPane>
