@@ -18,8 +18,8 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton; 
 import javafx.scene.control.ToggleGroup;  
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.control.TableCell; 
-import javafx.util.Callback; 
+import javafx.scene.control.TableCell; // 버튼 셀을 위해 임포트
+import javafx.util.Callback; // 버튼 셀을 위해 임포트
 import javafx.scene.layout.BorderPane; 
 import javafx.scene.layout.GridPane; 
 import javafx.scene.layout.StackPane; 
@@ -40,8 +40,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.ArrayList; 
 import java.util.Optional; 
-import javafx.concurrent.Task; 
 
+import javafx.concurrent.Task; // 백그라운드 작업을 위해 Task 임포트
+
+/**
+ * (★수정★) '신고 목록'과 '패널티 관리 목록' 탭 분리
+ */
 public class AdminController {
 
     private AdminService adminService; 
@@ -49,8 +53,7 @@ public class AdminController {
 
     private final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
-    @FXML private BorderPane adminRootPane; 
-    
+    @FXML private BorderPane adminRootPane;     
     @FXML private TilePane floorButtonContainer; 
     @FXML private VBox roomButtonContainer; 
     
@@ -220,6 +223,7 @@ public class AdminController {
         reportActionCol.setCellFactory(cellFactory);
     }
     
+
     private void setupAdminPenaltyTableColumns() {
         adminPenaltySeatIdCol.setCellValueFactory(new PropertyValueFactory<>("seatIndex")); 
         adminPenaltyStudentIdCol.setCellValueFactory(new PropertyValueFactory<>("studentRealId"));
@@ -228,10 +232,16 @@ public class AdminController {
         adminPenaltyTimeCol.setCellValueFactory(new PropertyValueFactory<>("reportTime"));
     }
     
+    /**
+     * (★수정★)
+     * '사용자 신고' 목록을 백그라운드 스레드로 불러와 'reportTable'을 채웁니다.
+     */
     private void loadUserReportsInBackground() {
         Task<List<Penalty>> loadPenaltiesTask = new Task<>() {
             @Override
             protected List<Penalty> call() throws Exception {
+
+                // (수정) 사용자 신고 목록만 가져옴
                 return adminService.getAllUserReports();
             }
         };
@@ -248,11 +258,17 @@ public class AdminController {
 
         new Thread(loadPenaltiesTask).start();
     }
-    
+
+    /**
+     * (★신규★)
+     * '관리자 부여 패널티' 목록을 백그라운드 스레드로 불러와 'adminPenaltyTable'을 채웁니다.
+     */
+
     private void loadAdminPenaltiesInBackground() {
         Task<List<Penalty>> loadAdminPenaltiesTask = new Task<>() {
             @Override
             protected List<Penalty> call() throws Exception {
+                // (신규) 관리자 부여 목록만 가져옴
                 return adminService.getAllAdminPenalties();
             }
         };
@@ -269,6 +285,8 @@ public class AdminController {
 
         new Thread(loadAdminPenaltiesTask).start();
     }
+    
+    // --- (좌석 관련 핵심 로직) ---
     
     private void loadSeatsForRoomInBackground(String roomName) {
         visualSeatGrid.getChildren().clear(); 
@@ -302,6 +320,11 @@ public class AdminController {
             String startTimeStr = (startTime != null) ? startTime.format(TIME_FORMATTER) : "N/A";
             
             String combinedInfo = selectedSeat.getCurrentUserName();
+    /**
+     * (★임시 해결책★)
+     * "이름|학번" 문자열을 분리하여 하단 상세 정보(selectedSeatLabel)에 표시합니다.
+     */
+
             String userName = "";
             String studentId = "";
 
@@ -352,6 +375,9 @@ public class AdminController {
         }
     }
 
+    /**
+     * '좌석 현황' 탭의 '패널티 부여' 버튼 로직 (백그라운드 Task 실행)
+     */
     @FXML
     void handlePenalty(ActionEvent event) {
         if (selectedSeat == null) { showAlert(AlertType.ERROR, "오류", "먼저 좌석을 선택하세요."); return; }
@@ -406,6 +432,48 @@ public class AdminController {
         }
     }
     
+//    private void handleGrantPenaltyFromReport(Penalty report) {
+//        Alert confirmAlert = new Alert(AlertType.CONFIRMATION);
+//        confirmAlert.setTitle("패널티 부여 확인 (신고 기반)");
+//        confirmAlert.setHeaderText("신고된 사용자 ID: " + report.getStId() + " (학번: " + report.getStudentRealId() + ")");
+//        confirmAlert.setContentText("신고 사유: " + report.getReason() + "\n정말로 이 사용자에게 패널티를 부여하시겠습니까?");
+//        Optional<ButtonType> result = confirmAlert.showAndWait();
+//
+//        if (result.isPresent() && result.get() == ButtonType.OK) {
+//            
+//            Task<Boolean> penaltyTask = new Task<>() {
+//                @Override
+//                protected Boolean call() throws Exception {
+//                    return adminService.grantPenalty(report.getStId(), report.getReason(), report.getSeatIndex()); 
+//                }
+//            };
+//
+//            penaltyTask.setOnSucceeded(e -> {
+//                boolean success = penaltyTask.getValue();
+//                if (success) {
+//                    showAlert(AlertType.INFORMATION, "성공", "ID: " + report.getStId() + " 님에게 패널티를 부여했습니다.");
+//                    loadUserReportsInBackground(); 
+//                    // (수정) '관리자 패널티 목록' 탭을 새로고침
+//                    loadAdminPenaltiesInBackground(); 
+//                } else {
+//                    showAlert(AlertType.ERROR, "실패", "DB 오류. 패널티 부여에 실패했습니다.");
+//                }
+//            });
+//
+//            penaltyTask.setOnFailed(e -> {
+//                showAlert(AlertType.ERROR, "심각한 오류", "패널티 부여 중 예외 발생: " + penaltyTask.getException().getMessage());
+//                penaltyTask.getException().printStackTrace();
+//            });
+//
+//            new Thread(penaltyTask).start();
+//        }
+//    }
+    
+    /**
+     * (★신규★)
+     * '신고 목록' 탭의 '패널티 부여' 버튼을 눌렀을 때 실행되는 핸들러입니다.
+     * @param report '신고 목록' 테이블에서 선택된 Penalty 객체
+     */
     private void handleGrantPenaltyFromReport(Penalty report) {
         Alert confirmAlert = new Alert(AlertType.CONFIRMATION);
         confirmAlert.setTitle("패널티 부여 확인 (신고 기반)");
@@ -418,6 +486,7 @@ public class AdminController {
             Task<Boolean> penaltyTask = new Task<>() {
                 @Override
                 protected Boolean call() throws Exception {
+                    // (userId, reason, seatIndex)
                     return adminService.grantPenalty(report.getStId(), report.getReason(), report.getSeatIndex()); 
                 }
             };
@@ -426,8 +495,9 @@ public class AdminController {
                 boolean success = penaltyTask.getValue();
                 if (success) {
                     showAlert(AlertType.INFORMATION, "성공", "ID: " + report.getStId() + " 님에게 패널티를 부여했습니다.");
-                    loadUserReportsInBackground(); 
-                    loadAdminPenaltiesInBackground(); 
+                    // ★ 양쪽 테이블 모두 새로고침
+                    loadUserReportsInBackground(); // '신고 목록' 탭 (사용자 신고)
+                    loadAdminPenaltiesInBackground(); // '패널티 관리' 탭 (관리자 부여)
                 } else {
                     showAlert(AlertType.ERROR, "실패", "DB 오류. 패널티 부여에 실패했습니다.");
                 }
@@ -442,6 +512,9 @@ public class AdminController {
         }
     }
     
+    /**
+     * 강제 퇴실 (백그라운드 Task 실행)
+     */
     @FXML
     void handleEject(ActionEvent event) {
         if (selectedSeat == null) { showAlert(AlertType.ERROR, "오류", "먼저 좌석을 선택하세요."); return; }
@@ -476,6 +549,7 @@ public class AdminController {
                     showAlert(AlertType.INFORMATION, "성공", "ID: " + userId + " 님을 강제 퇴실시켰습니다.");
                     actionField.clear(); 
                     loadSeatsForRoomInBackground(currentSelectedRoom); // (수정) 현재 선택된 방 이름 사용
+
                 } else {
                     showAlert(AlertType.ERROR, "실패", "DB 오류. 강제 퇴실에 실패했습니다.");
                 }
@@ -490,6 +564,10 @@ public class AdminController {
         }
     }
     
+
+    /**
+     * 좌석 상태 변경 (백그라운드 Task 실행)
+     */
     @FXML
     void handleToggleBroken(ActionEvent event) {
         if (selectedSeat == null) { showAlert(AlertType.ERROR, "오류", "먼저 좌석을 선택하세요."); return; }
@@ -547,7 +625,9 @@ public class AdminController {
             new Thread(toggleTask).start();
         }
     }
-
+    /**
+     * 좌석 렌더링 (UI 스레드에서 실행됨)
+     */
     private void renderVisualSeats(List<Seat> seatList, String roomName) {
         visualSeatGrid.getChildren().clear(); 
         for (Seat seat : seatList) {
@@ -564,6 +644,7 @@ public class AdminController {
             }
         }
     }
+
 
     private StackPane createSeatPane(Seat seat) {
         Rectangle rect = new Rectangle(90, 60); 
@@ -659,6 +740,7 @@ public class AdminController {
         return seatPane;
     }
     
+
     private void highlightSelectedSeat(StackPane clickedSeatPane) {
         for (javafx.scene.Node node : visualSeatGrid.getChildren()) {
             if (node instanceof StackPane) {
@@ -672,6 +754,7 @@ public class AdminController {
         clickedRect.setStrokeWidth(3); 
     }
 
+
     private void showAlert(AlertType type, String title, String message) {
         Platform.runLater(() -> {
             Alert alert = new Alert(type);
@@ -680,5 +763,18 @@ public class AdminController {
             alert.setContentText(message);
             alert.showAndWait();
         });
+    }
+    
+    /**
+     * (★참고★)
+     * 이 메서드는 현재 사용되지 않는 것으로 보입니다.
+     */
+    private void handlePenaltyAction(ActionEvent event) {
+        User loggedInUser = LoginController.getCurrentLoggedInUser();
+
+        if (loggedInUser != null) {
+            // User 모델에 getStudentId()가 존재한다고 가정
+            // String studentIdToAssignPenalty = loggedInUser.getStudentId(); 
+        }
     }
 }
