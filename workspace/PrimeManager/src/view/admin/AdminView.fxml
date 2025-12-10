@@ -36,14 +36,12 @@
                <content>
                   <HBox>
                      <VBox spacing="20.0" style="-fx-background-color: #f0f0f0; -fx-padding: 20;" prefWidth="280.0" minWidth="280.0">
-                        
                         <VBox spacing="10.0" style="-fx-background-color: #ffffff; -fx-padding: 15; -fx-background-radius: 10; -fx-border-color: #e0e0e0; -fx-border-radius: 10;">
                            <Label text="층 선택">
                               <font><Font name="System Bold" size="14.0" /></font>
                            </Label>
                            <TilePane fx:id="floorButtonContainer" hgap="10.0" vgap="10.0" prefColumns="2" tileAlignment="TOP_LEFT" />
                         </VBox>
-                        
                         <VBox spacing="10.0" style="-fx-background-color: #ffffff; -fx-padding: 15; -fx-background-radius: 10; -fx-border-color: #e0e0e0; -fx-border-radius: 10;" VBox.vgrow="ALWAYS">
                            <Label text="룸 선택">
                               <font><Font name="System Bold" size="14.0" /></font>
@@ -80,6 +78,10 @@
                                          style="-fx-background-color: #d9534f; -fx-text-fill: white; -fx-font-weight: bold;" />
                                  <Button fx:id="ejectButton" text="강제 퇴실" onAction="#handleEject" 
                                          style="-fx-background-color: #f0ad4e; -fx-text-fill: white; -fx-font-weight: bold;" />
+                                         
+                                 <Button fx:id="viewReservationButton" text="예약 명단 확인" onAction="#handleViewReservations"
+                                         style="-fx-background-color: #5cb85c; -fx-text-fill: white; -fx-font-weight: bold;" />
+                                         
                                  <Button fx:id="toggleBrokenButton" text="점검/사용 설정" onAction="#handleToggleBroken" 
                                          style="-fx-background-color: #5bc0de; -fx-text-fill: white; -fx-font-weight: bold;" />
                               </HBox>
@@ -124,7 +126,6 @@
                    <ListView fx:id="overdueUserList" />
                </content>
             </Tab>
-            
          </tabs>
       </TabPane>
    </center>
