@@ -5,6 +5,7 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.Region?>
 
 <StackPane xmlns="http://javafx.com/javafx/21"
            xmlns:fx="http://javafx.com/fxml/1"
@@ -13,43 +14,90 @@
            style="-fx-background-color: #FFFFFF;">
 
     <VBox StackPane.alignment="CENTER"
-          alignment="CENTER" spacing="25"
-          maxWidth="700" maxHeight="400"
-          style="-fx-background-color: #F8F8FC;
-                 -fx-background-radius: 15px;
-                 -fx-border-radius: 15px;
-                 -fx-border-color: #EAEAEA;
-                 -fx-border-width: 1px;
-                 -fx-font-family: 'Inter';
-                 -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 25, 0, 0, 8);
-                 -fx-padding: 40px;">
+          alignment="TOP_CENTER" 
+          spacing="15"
+          maxWidth="700"
+          maxHeight="400"
+          style="-fx-background-color: #F0F2F8;
+                 -fx-background-radius: 20px;
+                 -fx-border-radius: 20px;
+                 -fx-border-color: #4A5B8F;
+                 -fx-border-width: 2px;
+                 -fx-padding: 40px 40px 30px 40px;">
+                 
+        <Button fx:id="checkInButton" 
+                onAction="#handleCheckInButtonAction" 
+                text="입실하기"
+                style="-fx-background-color: #3366FF; 
+                       -fx-text-fill: white;
+                       -fx-font-weight: bold; 
+                       -fx-font-size: 22px;
+                       -fx-pref-width: 400px; 
+                       -fx-pref-height: 55px;
+                       -fx-background-radius: 10px; 
+                       -fx-cursor: hand;" />
 
-        <Button fx:id="checkInButton" onAction="#handleCheckInButtonAction" text="입실/퇴실하기 >"
-                style="-fx-background-color: #3366FF; -fx-text-fill: white;
-                       -fx-font-weight: bold; -fx-font-size: 24px;
-                       -fx-pref-width: 350px; -fx-pref-height: 60px;
-                       -fx-background-radius: 10px; -fx-cursor: hand;" />
-
-        <Button fx:id="reserveButton" onAction="#handleReserveButtonAction" text="예약하기 >"
-                style="-fx-background-color: #3366FF; -fx-text-fill: white;
-                       -fx-font-weight: bold; -fx-font-size: 24px;
-                       -fx-pref-width: 350px; -fx-pref-height: 60px;
-                       -fx-background-radius: 10px; -fx-cursor: hand;" />
+        <Button fx:id="reserveButton" 
+                onAction="#handleReserveButtonAction" 
+                text="예약하기"
+                style="-fx-background-color: #3366FF; 
+                       -fx-text-fill: white;
+                       -fx-font-weight: bold; 
+                       -fx-font-size: 22px;
+                       -fx-pref-width: 400px; 
+                       -fx-pref-height: 55px;
+                       -fx-background-radius: 10px; 
+                       -fx-cursor: hand;" />
                        
-        <Button fx:id="extendButton" onAction="#handleExtendButtonAction" text="연장하기 >"
-                style="-fx-background-color: #3366FF; -fx-text-fill: white;
-                       -fx-font-weight: bold; -fx-font-size: 24px;
-                       -fx-pref-width: 350px; -fx-pref-height: 60px;
-                       -fx-background-radius: 10px; -fx-cursor: hand;" />
+        <Button fx:id="extendButton" 
+                onAction="#handleExtendButtonAction" 
+                text="연장하기/퇴실하기"
+                style="-fx-background-color: #3366FF; 
+                       -fx-text-fill: white;
+                       -fx-font-weight: bold; 
+                       -fx-font-size: 22px;
+                       -fx-pref-width: 400px; 
+                       -fx-pref-height: 55px;
+                       -fx-background-radius: 10px; 
+                       -fx-cursor: hand;" />
+        
+        <Button fx:id="logoutButton" 
+                onAction="#handleLogoutButtonAction" 
+                text="로그아웃 >"
+                style="-fx-background-color: #E0E3EB; 
+                       -fx-text-fill: #5A6B8F;
+                       -fx-font-weight: bold; 
+                       -fx-font-size: 14px;
+                       -fx-pref-width: 120px; 
+                       -fx-pref-height: 35px;
+                       -fx-background-radius: 20px; 
+                       -fx-cursor: hand;">
+            <VBox.margin>
+                <Insets top="5" bottom="10" />
+            </VBox.margin>
+        </Button>
 
-        <VBox.margin>
-            <Insets top="30" />
-        </VBox.margin>
-        <Button fx:id="logoutButton" onAction="#handleLogoutButtonAction" text="로그아웃"
-                style="-fx-background-color: #E9ECEF; -fx-text-fill: #495057;
-                       -fx-font-weight: bold; -fx-font-size: 16px;
-                       -fx-pref-width: 150px; -fx-pref-height: 45px;
-                       -fx-background-radius: 10px; -fx-cursor: hand;" />
+        <Region VBox.vgrow="ALWAYS" />
 
+        <VBox alignment="CENTER" spacing="8">
+            <Label text="사용에 불편함이 있나요?" 
+                   style="-fx-font-size: 16px; 
+                          -fx-text-fill: #333333;
+                          -fx-font-weight: normal;" />
+
+            <Button fx:id="reportButton" 
+                    onAction="#handleReportButtonAction" 
+                    text="신고하기"
+                    style="-fx-background-color: #FF5722; 
+                           -fx-text-fill: white;
+                           -fx-font-weight: bold; 
+                           -fx-font-size: 18px;
+                           -fx-pref-width: 200px; 
+                           -fx-pref-height: 50px;
+                           -fx-background-radius: 10px; 
+                           -fx-cursor: hand;" />
+        </VBox>
+        
     </VBox>
+    
 </StackPane>
