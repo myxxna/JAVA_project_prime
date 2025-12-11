@@ -28,8 +28,9 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.TilePane; 
 import javafx.scene.layout.VBox; 
 import javafx.scene.paint.Color; 
-import javafx.scene.shape.Rectangle; 
 import javafx.scene.text.Font; 
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.TextAlignment; 
 import javafx.stage.Stage; 
 import model.Seat;
 import model.Penalty; 
@@ -43,6 +44,7 @@ import java.util.List;
 import java.util.ArrayList; 
 import java.util.Optional; 
 import javafx.concurrent.Task; 
+import javafx.scene.effect.DropShadow; 
 
 public class AdminController {
 
@@ -85,15 +87,18 @@ public class AdminController {
         // 1. 노쇼 자동 처리
         adminService.processNoShow(); 
 
+        // 2. 화면 구성 요소 로드 (버튼, 테이블 등)
         createFloorButtons(); 
         setupReportTableColumns(); 
         setupAdminPenaltyTableColumns(); 
         loadUserReportsInBackground(); 
         loadAdminPenaltiesInBackground(); 
         
+        // 3. 우측 시간 초과자 목록 로드
         setupOverdueList(); 
         loadOverdueUsers(); 
         
+        // 4. 창 크기 조절 시 화면 중앙 정렬 리스너
         adminRootPane.sceneProperty().addListener((observable, oldScene, newScene) -> {
             if (newScene != null) {
                 newScene.windowProperty().addListener((obs, oldWindow, newWindow) -> {
@@ -108,161 +113,67 @@ public class AdminController {
         });
     }
 
-    private void setupOverdueList() {
-        overdueUserList.setCellFactory(param -> new ListCell<String>() {
-            private final Button btn = new Button("패널티");
-            private final HBox pane = new HBox(10);
-            private final Label label = new Label();
+    // --- [핵심 기능] 신고 목록 패널티 부여 (로그 추적 후 팝업) ---
+    private void handleGrantPenaltyFromReport(Penalty report) {
+        Task<User> findOffenderTask = new Task<>() {
+            @Override
+            protected User call() throws Exception {
+                // DAO를 통해 그 시간대 실제 사용자(범인)를 찾습니다.
+                return adminService.getOffenderByLog(report.getSeatIndex(), report.getReportTime());
+            }
+        };
+
+        findOffenderTask.setOnSucceeded(e -> {
+            User offender = findOffenderTask.getValue();
             
-            {
-                btn.setStyle("-fx-background-color: #ff5c5c; -fx-text-fill: white; -fx-font-size: 10px; -fx-cursor: hand;");
-                pane.setAlignment(Pos.CENTER_LEFT);
-                pane.getChildren().addAll(label, btn);
+            if (offender != null) {
+                // 범인을 찾았으면 팝업을 띄워 관리자에게 확인시킵니다.
+                Alert confirmAlert = new Alert(AlertType.CONFIRMATION);
+                confirmAlert.setTitle("사용자 확인 및 패널티 부여");
+                confirmAlert.setHeaderText("신고 시간대 실제 사용자 발견");
+                confirmAlert.setContentText("좌석: " + report.getSeatIndex() + "번\n" +
+                                            "발견된 사용자: " + offender.getName() + " (" + offender.getStudentId() + ")\n\n" +
+                                            "이 사용자에게 패널티를 부여하시겠습니까?");
                 
-                btn.setOnAction(event -> {
-                    String item = getItem();
-                    if (item != null) {
-                        String[] parts = item.split(",");
-                        if(parts.length >= 5) {
-                            int userId = Integer.parseInt(parts[0]);
-                            int seatIdx = Integer.parseInt(parts[1]);
-                            int resId = Integer.parseInt(parts[4]); 
-                            handleAutoPenalty(userId, seatIdx, "시간초과(30분)", resId);
-                        }
-                    }
-                });
-            }
-
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setGraphic(null);
-                    setText(null);
-                } else {
-                    try {
-                        String[] parts = item.split(",");
-                        if(parts.length >= 5) {
-                            String timeShort = parts[3].length() > 16 ? parts[3].substring(11, 16) : parts[3];
-                            String displayText = parts[2] + " (좌석:" + parts[1] + ") - " + timeShort;
-                            label.setText(displayText);
-                            setGraphic(pane);
-                        } else {
-                            setText(item);
-                            setGraphic(null);
-                        }
-                    } catch (Exception e) {
-                        setText(item);
-                        setGraphic(null);
-                    }
+                Optional<ButtonType> result = confirmAlert.showAndWait();
+                if (result.isPresent() && result.get() == ButtonType.OK) {
+                    // 확인 누르면 범인의 PK(id)로 패널티 부여
+                    executePenalty(offender.getId(), report.getReason(), report.getSeatIndex());
                 }
-            }
-        });
-    }
-
-    private void handleAutoPenalty(int userId, int seatIdx, String reason, int resId) {
-        Task<Boolean> task = new Task<>() {
-            @Override
-            protected Boolean call() throws Exception {
-                boolean success = adminService.grantPenalty(userId, reason, seatIdx);
-                if (success) {
-                    adminService.checkPenaltyDone(resId);
-                }
-                return success;
-            }
-        };
-        
-        task.setOnSucceeded(e -> {
-            if (task.getValue()) {
-                showAlert(AlertType.INFORMATION, "처리 완료", "패널티 부여 완료.");
-                loadOverdueUsers(); 
-                loadAdminPenaltiesInBackground(); 
             } else {
-                showAlert(AlertType.ERROR, "오류", "패널티 부여 실패");
+                showAlert(AlertType.WARNING, "사용자 확인 불가", "해당 시간대의 입실 로그를 찾을 수 없습니다.\n정확한 사용자를 특정하지 못했습니다.");
             }
         });
         
-        new Thread(task).start();
-    }
-    
-    private void loadOverdueUsers() {
-        Task<List<String>> task = new Task<>() {
-            @Override
-            protected List<String> call() throws Exception {
-                return adminService.getOverdueUsers();
-            }
-        };
-
-        task.setOnSucceeded(e -> {
-            List<String> list = task.getValue();
-            if (list == null || list.isEmpty()) {
-                overdueUserList.setItems(FXCollections.observableArrayList());
-                overdueUserList.setPlaceholder(new Label("시간 초과자 없음"));
-            } else {
-                overdueUserList.setItems(FXCollections.observableArrayList(list));
-            }
-        });
-
-        task.setOnFailed(e -> {
+        findOffenderTask.setOnFailed(e -> {
+            showAlert(AlertType.ERROR, "오류", "로그 조회 중 오류 발생");
             e.getSource().getException().printStackTrace();
         });
 
-        new Thread(task).start();
+        new Thread(findOffenderTask).start();
     }
     
-    private void createFloorButtons() {
-        List<Integer> floors = adminService.getFloors();
-        floorButtonContainer.getChildren().clear();
-        for (Integer floor : floors) {
-            ToggleButton btn = new ToggleButton(floor + "층");
-            btn.setToggleGroup(floorGroup);
-            btn.setPrefWidth(100);
-            btn.setPrefHeight(40);
-            btn.setStyle("-fx-background-color: #ffffff; -fx-background-radius: 5; -fx-border-color: #cccccc; -fx-border-radius: 5; -fx-font-weight: bold;");
-            btn.setOnAction(e -> {
-                if (btn.isSelected()) {
-                    updateButtonStyles(floorGroup);
-                    createRoomButtons(floor);
-                }
-            });
-            floorButtonContainer.getChildren().add(btn);
-        }
-    }
-
-    private void createRoomButtons(int floor) {
-        currentSelectedFloor = floor; 
-        List<String> rooms = adminService.getRoomsByFloor(floor);
-        roomButtonContainer.getChildren().clear();
-        visualSeatGrid.getChildren().clear(); 
-        for (String room : rooms) {
-            ToggleButton btn = new ToggleButton(room);
-            btn.setToggleGroup(roomGroup);
-            btn.setMaxWidth(Double.MAX_VALUE); 
-            btn.setPrefHeight(40);
-            btn.setStyle("-fx-background-color: #ffffff; -fx-background-radius: 5; -fx-border-color: #cccccc; -fx-border-radius: 5; -fx-font-weight: bold;");
-            btn.setOnAction(e -> {
-                if (btn.isSelected()) {
-                    updateButtonStyles(roomGroup);
-                    currentSelectedRoom = room;
-                    loadSeatsForRoomInBackground(floor, room);
-                    setSelectedSeat(null);
-                }
-            });
-            roomButtonContainer.getChildren().add(btn);
-        }
-    }
-    
-    private void updateButtonStyles(ToggleGroup group) {
-        group.getToggles().forEach(toggle -> {
-            ToggleButton btn = (ToggleButton) toggle;
-            if (btn.isSelected()) {
-                btn.setStyle("-fx-background-color: #5c9aff; -fx-text-fill: white; -fx-background-radius: 5; -fx-font-weight: bold;");
+    // 실제 패널티 부여 실행 (재사용 메서드)
+    private void executePenalty(int userId, String reason, int seatIndex) {
+        Task<Boolean> penaltyTask = new Task<>() {
+            @Override protected Boolean call() throws Exception { 
+                return adminService.grantPenalty(userId, reason, seatIndex); 
+            }
+        };
+        penaltyTask.setOnSucceeded(e -> {
+            if(penaltyTask.getValue()) { 
+                showAlert(AlertType.INFORMATION, "성공", "패널티 부여 완료"); 
+                loadUserReportsInBackground(); 
+                loadAdminPenaltiesInBackground();
             } else {
-                btn.setStyle("-fx-background-color: #ffffff; -fx-text-fill: black; -fx-background-radius: 5; -fx-border-color: #cccccc; -fx-border-radius: 5;");
+                showAlert(AlertType.ERROR, "실패", "패널티 부여 실패 (DB 오류)");
             }
         });
+        new Thread(penaltyTask).start();
     }
-    
+
+    // --- [UI 및 테이블 설정] ---
+
     private void setupReportTableColumns() {
         reportSeatIdCol.setCellValueFactory(new PropertyValueFactory<>("seatIndex")); 
         reportStudentIdCol.setCellValueFactory(new PropertyValueFactory<>("studentRealId")); 
@@ -317,6 +228,157 @@ public class AdminController {
         new Thread(loadAdminPenaltiesTask).start();
     }
     
+    // --- [우측 시간 초과자 목록 관리] ---
+
+    private void setupOverdueList() {
+        overdueUserList.setCellFactory(param -> new ListCell<String>() {
+            private final Button btn = new Button("패널티");
+            private final HBox pane = new HBox(10);
+            private final Label label = new Label();
+            {
+                btn.setStyle("-fx-background-color: #ff5c5c; -fx-text-fill: white; -fx-font-size: 10px; -fx-cursor: hand;");
+                pane.setAlignment(Pos.CENTER_LEFT); 
+                pane.getChildren().addAll(label, btn);
+                
+                btn.setOnAction(event -> {
+                    String item = getItem();
+                    if (item != null) {
+                        String[] parts = item.split(",");
+                        if(parts.length >= 5) {
+                            handleAutoPenalty(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), "시간초과(30분)", Integer.parseInt(parts[4]));
+                        }
+                    }
+                });
+            }
+            @Override 
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) { 
+                    setGraphic(null); setText(null); 
+                } else {
+                    try {
+                        String[] parts = item.split(",");
+                        if(parts.length >= 5) {
+                            String timeShort = parts[3].length() > 16 ? parts[3].substring(11, 16) : parts[3];
+                            String displayText = parts[2] + " (좌석:" + parts[1] + ") - " + timeShort;
+                            label.setText(displayText); 
+                            setGraphic(pane);
+                        } else { 
+                            setText(item); setGraphic(null); 
+                        }
+                    } catch (Exception e) { setText(item); setGraphic(null); }
+                }
+            }
+        });
+    }
+
+    // 시간 초과자 패널티 부여 (자동 처리)
+    private void handleAutoPenalty(int userId, int seatIdx, String reason, int resId) {
+        Task<Boolean> task = new Task<>() {
+            @Override
+            protected Boolean call() throws Exception {
+                boolean success = adminService.grantPenalty(userId, reason, seatIdx);
+                if (success) adminService.checkPenaltyDone(resId);
+                return success;
+            }
+        };
+        
+        task.setOnSucceeded(e -> {
+            if (task.getValue()) {
+                showAlert(AlertType.INFORMATION, "처리 완료", "패널티 부여 완료.");
+                loadOverdueUsers(); 
+                loadAdminPenaltiesInBackground(); 
+            } else {
+                showAlert(AlertType.ERROR, "오류", "패널티 부여 실패");
+            }
+        });
+        
+        new Thread(task).start();
+    }
+    
+    // 시간 초과자 목록 불러오기
+    private void loadOverdueUsers() {
+        Task<List<String>> task = new Task<>() {
+            @Override
+            protected List<String> call() throws Exception {
+                return adminService.getOverdueUsers();
+            }
+        };
+
+        task.setOnSucceeded(e -> {
+            List<String> list = task.getValue();
+            if (list == null || list.isEmpty()) {
+                overdueUserList.setItems(FXCollections.observableArrayList());
+                overdueUserList.setPlaceholder(new Label("시간 초과자 없음"));
+            } else {
+                overdueUserList.setItems(FXCollections.observableArrayList(list));
+            }
+        });
+
+        task.setOnFailed(e -> {
+            e.getSource().getException().printStackTrace();
+        });
+
+        new Thread(task).start();
+    }
+    
+    // --- [층/룸 버튼 생성 메서드] --- (이 부분이 빠져서 오류가 났었습니다)
+
+    private void createFloorButtons() {
+        List<Integer> floors = adminService.getFloors();
+        floorButtonContainer.getChildren().clear();
+        for (Integer floor : floors) {
+            ToggleButton btn = new ToggleButton(floor + "층");
+            btn.setToggleGroup(floorGroup);
+            btn.setPrefWidth(100);
+            btn.setPrefHeight(40);
+            btn.setStyle("-fx-background-color: #ffffff; -fx-background-radius: 5; -fx-border-color: #cccccc; -fx-border-radius: 5; -fx-font-weight: bold;");
+            btn.setOnAction(e -> {
+                if (btn.isSelected()) {
+                    updateButtonStyles(floorGroup);
+                    createRoomButtons(floor);
+                }
+            });
+            floorButtonContainer.getChildren().add(btn);
+        }
+    }
+
+    private void createRoomButtons(int floor) {
+        currentSelectedFloor = floor; 
+        List<String> rooms = adminService.getRoomsByFloor(floor);
+        roomButtonContainer.getChildren().clear();
+        visualSeatGrid.getChildren().clear(); 
+        for (String room : rooms) {
+            ToggleButton btn = new ToggleButton(room);
+            btn.setToggleGroup(roomGroup);
+            btn.setMaxWidth(Double.MAX_VALUE); 
+            btn.setPrefHeight(40);
+            btn.setStyle("-fx-background-color: #ffffff; -fx-background-radius: 5; -fx-border-color: #cccccc; -fx-border-radius: 5; -fx-font-weight: bold;");
+            btn.setOnAction(e -> {
+                if (btn.isSelected()) {
+                    updateButtonStyles(roomGroup);
+                    currentSelectedRoom = room;
+                    loadSeatsForRoomInBackground(floor, room);
+                    setSelectedSeat(null);
+                }
+            });
+            roomButtonContainer.getChildren().add(btn);
+        }
+    }
+    
+    private void updateButtonStyles(ToggleGroup group) {
+        group.getToggles().forEach(toggle -> {
+            ToggleButton btn = (ToggleButton) toggle;
+            if (btn.isSelected()) {
+                btn.setStyle("-fx-background-color: #5c9aff; -fx-text-fill: white; -fx-background-radius: 5; -fx-font-weight: bold;");
+            } else {
+                btn.setStyle("-fx-background-color: #ffffff; -fx-text-fill: black; -fx-background-radius: 5; -fx-border-color: #cccccc; -fx-border-radius: 5;");
+            }
+        });
+    }
+    
+    // --- [좌석 시각화 및 정보 표시] ---
+
     private void loadSeatsForRoomInBackground(int floor, String roomName) {
         visualSeatGrid.getChildren().clear(); 
         Task<List<Seat>> loadSeatsTask = new Task<>() {
@@ -330,7 +392,6 @@ public class AdminController {
         new Thread(loadSeatsTask).start();
     }
 
-    // ★ [수정됨] 좌석 클릭 시 하단 라벨에 '이용 시간' 표시 로직 추가
     private void setSelectedSeat(Seat seat) {
         this.selectedSeat = seat;
         if (selectedSeat != null) {
@@ -338,31 +399,143 @@ public class AdminController {
             String status = seat.getStatus(); 
             String nameValue = seat.getCurrentUserName(); 
             
-            // 기본 텍스트
             String infoText = "좌석: " + seatNum;
 
             if ("U".equals(status)) {
-                infoText += " (사용자: " + (nameValue != null ? nameValue.replace("\n", " ") : "없음") + ")";
-                
-                // ★ 여기가 핵심! 시간 정보가 있으면 라벨에 추가
+                infoText += "  |  사용자: " + (nameValue != null ? nameValue.replace("\n", " ") : "없음");
                 if (seat.getStartTime() != null && seat.getEndTime() != null) {
                     String start = seat.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm"));
                     String end = seat.getEndTime().format(DateTimeFormatter.ofPattern("HH:mm"));
                     infoText += "  |  이용 시간: " + start + " ~ " + end;
                 }
-                
             } else if ("R".equals(status)) {
-                infoText += " (예약자: " + (nameValue != null ? nameValue.replace("\n", " ") : "") + ")";
+                infoText += "  |  예약자: " + (nameValue != null ? nameValue.replace("\n", " ") : "");
             } else if ("M".equals(status)) {
-                infoText += " (점검중)";
+                infoText += "  |  상태: 점검중";
             } else {
-                infoText += " (빈 좌석)";
+                infoText += "  |  상태: 빈 좌석";
             }
             selectedSeatLabel.setText(infoText);
         } else {
             selectedSeatLabel.setText(currentSelectedRoom != null ? currentSelectedRoom + "의 좌석을 클릭하세요." : "먼저 층과 룸을 선택하세요.");
         }
     }
+
+    private void renderVisualSeats(List<Seat> seatList, String roomName) {
+        visualSeatGrid.getChildren().clear(); 
+        int autoIndex = 0; 
+        int columnsPerRow = 6; 
+
+        for (Seat seat : seatList) {
+            StackPane seatPane = createSeatPane(seat); 
+            String seatNumber = seat.getSeatNumber(); 
+            int colIndex = 0;
+            int rowIndex = 0;
+
+            if (seatNumber == null || seatNumber.trim().isEmpty()) {
+                colIndex = autoIndex % columnsPerRow;
+                rowIndex = autoIndex / columnsPerRow;
+                Label label = (Label)((VBox)seatPane.getChildren().get(0)).getChildren().get(0);
+                label.setText("NO." + seat.getId()); 
+                label.setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
+                autoIndex++; 
+            } else {
+                try {
+                    char rowChar = seatNumber.toUpperCase().charAt(0);
+                    if (Character.isDigit(rowChar)) {
+                        int num = Integer.parseInt(seatNumber);
+                        rowIndex = (num - 1) / columnsPerRow;
+                        colIndex = (num - 1) % columnsPerRow;
+                    } else {
+                        rowIndex = rowChar - 'A'; 
+                        String colStr = seatNumber.substring(1);
+                        colIndex = (colStr.isEmpty()) ? 0 : Integer.parseInt(colStr) - 1;
+                    }
+                } catch (Exception e) {
+                    colIndex = autoIndex % columnsPerRow;
+                    rowIndex = autoIndex / columnsPerRow;
+                    autoIndex++;
+                }
+            }
+            visualSeatGrid.add(seatPane, colIndex, rowIndex);
+        }
+    }
+
+    private StackPane createSeatPane(Seat seat) {
+        StackPane seatPane = new StackPane();
+        seatPane.setPrefSize(90, 70); 
+        
+        Label seatLabel = new Label(seat.getSeatNumber());
+        seatLabel.setFont(Font.font("Arial", FontWeight.BOLD, 18)); 
+        
+        Label userLabel = new Label();
+        userLabel.setFont(Font.font("Arial", 9)); 
+        userLabel.setTextAlignment(TextAlignment.CENTER); 
+        
+        String status = seat.getStatus();
+        String nameValue = seat.getCurrentUserName(); 
+        
+        String COLOR_WHITE = "-fx-background-color: white; -fx-border-color: #dcdcdc; -fx-text-fill: black;";
+        String COLOR_RED   = "-fx-background-color: #e04f5f; -fx-border-color: #e04f5f; -fx-text-fill: white;";
+        String COLOR_GRAY  = "-fx-background-color: #d3d3d3; -fx-border-color: #d3d3d3; -fx-text-fill: #777777;";
+        String COLOR_BLUE  = "-fx-background-color: #4facfe; -fx-border-color: #4facfe; -fx-text-fill: white;"; 
+
+        String commonStyle = "-fx-background-radius: 5; -fx-border-radius: 5; -fx-border-width: 1.5; " +
+                             "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 5, 0, 0, 2);";
+
+        boolean isReservedSoon = false;
+        if (seat.getStartTime() != null) {
+            long minutes = ChronoUnit.MINUTES.between(LocalDateTime.now(), seat.getStartTime());
+            if (minutes >= 0 && minutes <= 30) isReservedSoon = true;
+        }
+
+        if ("U".equals(status)) {
+            seatPane.setStyle(commonStyle + COLOR_BLUE);
+            seatLabel.setStyle("-fx-text-fill: white;");
+            userLabel.setStyle("-fx-text-fill: white;");
+            userLabel.setText(nameValue != null ? nameValue : "사용중"); 
+        } else if ("M".equals(status)) {
+            seatPane.setStyle(commonStyle + COLOR_GRAY);
+            seatLabel.setStyle("-fx-text-fill: #666666;");
+        } else if ("R".equals(status) || isReservedSoon) {
+            seatPane.setStyle(commonStyle + "-fx-background-color: #fffacd; -fx-border-color: #f0e68c; -fx-text-fill: black;");
+            userLabel.setText("예약중");
+        } else {
+            seatPane.setStyle(commonStyle + COLOR_WHITE);
+        }
+
+        VBox content = new VBox(2); 
+        content.setAlignment(Pos.CENTER);
+        content.getChildren().addAll(seatLabel, userLabel); 
+        seatPane.getChildren().add(content);
+        seatPane.setUserData(seat); 
+
+        seatPane.setOnMouseClicked(event -> {
+            setSelectedSeat((Seat) seatPane.getUserData()); 
+            highlightSelectedSeat(seatPane); 
+        });
+        
+        seatPane.setOnMouseEntered(e -> seatPane.setOpacity(0.8));
+        seatPane.setOnMouseExited(e -> seatPane.setOpacity(1.0));
+
+        return seatPane;
+    }
+    
+    private void highlightSelectedSeat(StackPane clickedSeatPane) {
+        for (javafx.scene.Node node : visualSeatGrid.getChildren()) {
+            if (node instanceof StackPane) {
+                StackPane pane = (StackPane) node;
+                pane.setEffect(new DropShadow(5, javafx.scene.paint.Color.rgb(0,0,0,0.1))); 
+                pane.setScaleX(1.0);
+                pane.setScaleY(1.0);
+            }
+        }
+        clickedSeatPane.setEffect(new DropShadow(15, javafx.scene.paint.Color.DODGERBLUE));
+        clickedSeatPane.setScaleX(1.05); 
+        clickedSeatPane.setScaleY(1.05);
+    }
+
+    // --- [나머지 버튼 이벤트 핸들러] ---
 
     @FXML
     void handlePenalty(ActionEvent event) {
@@ -380,34 +553,7 @@ public class AdminController {
         Optional<ButtonType> result = confirmAlert.showAndWait();
 
         if (result.isPresent() && result.get() == ButtonType.OK) {
-            Task<Boolean> penaltyTask = new Task<>() {
-                @Override protected Boolean call() throws Exception { return adminService.grantPenalty(userId, reason, seatIndex); }
-            };
-            penaltyTask.setOnSucceeded(e -> {
-                if (penaltyTask.getValue()) {
-                    showAlert(AlertType.INFORMATION, "성공", "패널티 부여 성공");
-                    actionField.clear(); 
-                    loadAdminPenaltiesInBackground(); 
-                } else showAlert(AlertType.ERROR, "실패", "패널티 부여 실패");
-            });
-            new Thread(penaltyTask).start();
-        }
-    }
-    
-    private void handleGrantPenaltyFromReport(Penalty report) {
-        Alert confirmAlert = new Alert(AlertType.CONFIRMATION);
-        confirmAlert.setTitle("패널티 부여 확인");
-        confirmAlert.setContentText("신고된 사용자에게 패널티를 부여하시겠습니까?");
-        Optional<ButtonType> result = confirmAlert.showAndWait();
-        if (result.isPresent() && result.get() == ButtonType.OK) {
-            Task<Boolean> penaltyTask = new Task<>() {
-                @Override protected Boolean call() throws Exception { return adminService.grantPenalty(report.getStId(), report.getReason(), report.getSeatIndex()); }
-            };
-            penaltyTask.setOnSucceeded(e -> {
-                if(penaltyTask.getValue()) { showAlert(AlertType.INFORMATION,"성공","패널티 부여 완료"); loadUserReportsInBackground(); loadAdminPenaltiesInBackground();}
-                else showAlert(AlertType.ERROR,"실패","DB 오류");
-            });
-            new Thread(penaltyTask).start();
+            executePenalty(userId, reason, seatIndex);
         }
     }
     
@@ -443,11 +589,7 @@ public class AdminController {
         if (selectedSeat == null) { showAlert(AlertType.ERROR, "오류", "먼저 좌석을 선택하세요."); return; }
         String currentStatus = selectedSeat.getStatus(); 
         String newStatus = null;
-        if ("A".equals(currentStatus)) {
-            newStatus = "M"; 
-        } else if ("M".equals(currentStatus)) {
-            newStatus = "A"; 
-        }
+        if ("A".equals(currentStatus)) { newStatus = "M"; } else if ("M".equals(currentStatus)) { newStatus = "A"; }
 
         if (newStatus == null) { showAlert(AlertType.WARNING, "변경 불가", "사용 중이거나 예약 중인 좌석은 변경할 수 없습니다."); return; }
         
@@ -480,7 +622,6 @@ public class AdminController {
         }
         
         List<String> list = adminService.getReservations(selectedSeat.getId());
-        
         StringBuilder msg = new StringBuilder();
         if (list.isEmpty()) {
             msg.append("현재 예약 대기자가 없습니다.");
@@ -495,126 +636,6 @@ public class AdminController {
         alert.setHeaderText("좌석 " + selectedSeat.getSeatNumber() + " 예약 현황");
         alert.setContentText(msg.toString());
         alert.showAndWait();
-    }
-
-    private void renderVisualSeats(List<Seat> seatList, String roomName) {
-        visualSeatGrid.getChildren().clear(); 
-        int autoIndex = 0; 
-        int columnsPerRow = 6; 
-
-        for (Seat seat : seatList) {
-            StackPane seatPane = createSeatPane(seat); 
-            String seatNumber = seat.getSeatNumber(); 
-            int colIndex = 0;
-            int rowIndex = 0;
-
-            if (seatNumber == null || seatNumber.trim().isEmpty()) {
-                colIndex = autoIndex % columnsPerRow;
-                rowIndex = autoIndex / columnsPerRow;
-                Label label = (Label)((VBox)seatPane.getChildren().get(1)).getChildren().get(0);
-                label.setText("NO." + seat.getId()); 
-                label.setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
-                autoIndex++; 
-            } else {
-                try {
-                    char rowChar = seatNumber.toUpperCase().charAt(0);
-                    if (Character.isDigit(rowChar)) {
-                        int num = Integer.parseInt(seatNumber);
-                        rowIndex = (num - 1) / columnsPerRow;
-                        colIndex = (num - 1) % columnsPerRow;
-                    } else {
-                        rowIndex = rowChar - 'A'; 
-                        String colStr = seatNumber.substring(1);
-                        colIndex = (colStr.isEmpty()) ? 0 : Integer.parseInt(colStr) - 1;
-                    }
-                } catch (Exception e) {
-                    colIndex = autoIndex % columnsPerRow;
-                    rowIndex = autoIndex / columnsPerRow;
-                    autoIndex++;
-                }
-            }
-            visualSeatGrid.add(seatPane, colIndex, rowIndex);
-        }
-    }
-
-    // ★ [수정됨] 좌석 박스 안에는 이름과 학번만 표시 (시간 삭제)
-    private StackPane createSeatPane(Seat seat) {
-        Rectangle rect = new Rectangle(100, 70); 
-        rect.setStroke(Color.DARKGRAY);
-        rect.setArcWidth(10);
-        rect.setArcHeight(10);
-
-        Label seatLabel = new Label(seat.getSeatNumber());
-        seatLabel.setFont(new Font("Arial", 14)); 
-        seatLabel.setStyle("-fx-font-weight: bold;");
-        
-        Label infoLabel = new Label();
-        infoLabel.setFont(new Font("Arial", 11)); 
-        infoLabel.setAlignment(Pos.CENTER); 
-        
-        Button reserveListBtn = new Button("예약확인");
-        reserveListBtn.setStyle("-fx-font-size: 9px; -fx-padding: 2 5 2 5;");
-        reserveListBtn.setOnAction(e -> {
-            selectedSeat = seat; 
-            handleViewReservations(null);
-        });
-
-        String status = seat.getStatus();
-        String nameValue = seat.getCurrentUserName(); 
-        
-        boolean isReservedSoon = false;
-        if (seat.getStartTime() != null) {
-            long minutes = ChronoUnit.MINUTES.between(LocalDateTime.now(), seat.getStartTime());
-            if (minutes >= 0 && minutes <= 30) {
-                isReservedSoon = true;
-            }
-        }
-
-        if ("U".equals(status)) {
-            rect.setFill(Color.LIGHTBLUE); 
-            // ★ 여기 시간이 빠지고 이름(학번)만 들어갑니다.
-            infoLabel.setText(nameValue != null ? nameValue : "사용중");
-            
-        } else if ("M".equals(status)) {
-            rect.setFill(Color.INDIANRED);
-            infoLabel.setText("점검중");
-            
-        } else if ("R".equals(status) || isReservedSoon) {
-            rect.setFill(Color.LIGHTYELLOW);
-            infoLabel.setText("예약중");
-            
-        } else {
-            rect.setFill(Color.LIGHTGRAY);
-            infoLabel.setText("빈 좌석");
-        }
-        
-        VBox content = new VBox(2, seatLabel, infoLabel, reserveListBtn); 
-        content.setAlignment(Pos.CENTER);
-        
-        StackPane seatPane = new StackPane(rect, content); 
-        seatPane.setUserData(seat); 
-
-        seatPane.setOnMouseClicked(event -> {
-            if (!event.getTarget().equals(reserveListBtn)) {
-                setSelectedSeat((Seat) seatPane.getUserData()); 
-                highlightSelectedSeat(seatPane); 
-            }
-        });
-
-        return seatPane;
-    }
-    
-    private void highlightSelectedSeat(StackPane clickedSeatPane) {
-        for (javafx.scene.Node node : visualSeatGrid.getChildren()) {
-            if (node instanceof StackPane) {
-                Rectangle r = (Rectangle) ((StackPane)node).getChildren().get(0);
-                r.setStroke(Color.DARKGRAY); 
-                r.setStrokeWidth(1);
-            }
-        }
-        Rectangle clickedRect = (Rectangle) clickedSeatPane.getChildren().get(0);
-        clickedRect.setStroke(Color.BLUE); 
-        clickedRect.setStrokeWidth(3); 
     }
 
     private void showAlert(AlertType type, String title, String message) {
