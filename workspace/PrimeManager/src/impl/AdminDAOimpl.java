@@ -1,167 +1,82 @@
-package impl; 
-
-import config.DBConnection;
-import model.Penalty;
-import model.Seat; 
+package impl;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.LocalDateTime; 
 import java.util.ArrayList;
 import java.util.List;
 
+import config.DBConnection;
+import model.Penalty;
+import model.Seat;
+
 public class AdminDAOimpl {
 
-    // 층 목록 조회
-    public List<Integer> getUniqueFloors() {
-        List<Integer> floors = new ArrayList<>();
-        String sql = "SELECT DISTINCT floor FROM seats ORDER BY floor";
+    // 1. 프로그램 시작 시 30분 지난 미입실 예약을 'NOSHOW'로 변경 (좌석 비우기)
+    public void processNoShowReservations() {
+        String sql = "UPDATE reservations " +
+                     "SET status = 'NOSHOW' " +
+                     "WHERE status = 'PENDING' " +
+                     "AND reservation_time < DATE_SUB(NOW(), INTERVAL 30 MINUTE)";
+                     
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            int count = pstmt.executeUpdate();
+            if(count > 0) {
+                System.out.println("[시스템] 30분 초과 예약 " + count + "건을 NOSHOW 처리했습니다.");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // 2. 시간 초과자(NOSHOW) 목록 조회
+    public List<String> getOverdueReservations() {
+        List<String> overdueList = new ArrayList<>();
+        String sql = "SELECT u.id AS user_id, u.name, s.seat_index, r.reservation_time, r.id AS res_id " +
+                     "FROM reservations r " +
+                     "JOIN users u ON r.user_id = u.id " +
+                     "JOIN seats s ON r.seat_id = s.id " + 
+                     "WHERE r.status = 'NOSHOW'";
+
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {
+
             while (rs.next()) {
-                floors.add(rs.getInt("floor"));
+                int userId = rs.getInt("user_id");
+                String userName = rs.getString("name");
+                int seatIdx = rs.getInt("seat_index");
+                String time = rs.getString("reservation_time");
+                int resId = rs.getInt("res_id");
+                overdueList.add(userId + "," + seatIdx + "," + userName + "," + time + "," + resId);
             }
         } catch (SQLException e) {
-            System.out.println("getUniqueFloors 중 DB 오류 발생");
             e.printStackTrace();
         }
-        return floors;
+        return overdueList;
     }
 
-    // 층별 룸 목록 조회
-    public List<String> getUniqueRoomsByFloor(int floor) {
-        List<String> roomNames = new ArrayList<>();
-        String sql = "SELECT DISTINCT room_index FROM seats WHERE floor = ? ORDER BY room_index";
+    // 3. 패널티 부여 완료 후 상태 변경 (NOSHOW -> PENALIZED)
+    public void updateReservationStatusToPenalized(int reservationId) {
+        String sql = "UPDATE reservations SET status = 'PENALIZED' WHERE id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, floor);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    roomNames.add(rs.getString("room_index"));
-                }
-            }
+            pstmt.setInt(1, reservationId);
+            pstmt.executeUpdate();
         } catch (SQLException e) {
-            System.out.println("getUniqueRoomsByFloor 중 DB 오류 발생");
             e.printStackTrace();
         }
-        return roomNames;
     }
     
-    // 전체 룸 이름 조회
-    public List<String> getUniqueRoomNames() {
-        List<String> roomNames = new ArrayList<>();
-        String sql = "SELECT DISTINCT room_index FROM seats ORDER BY room_index";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
-            while (rs.next()) {
-                roomNames.add(rs.getString("room_index"));
-            }
-        } catch (SQLException e) {
-            System.out.println("getUniqueRoomNames 중 DB 오류 발생");
-            e.printStackTrace();
-        }
-        return roomNames;
-    }
-
-    // ★(핵심) 좌석 상태 조회 (Seat.java 필드 재활용 로직 포함)
-    public List<Seat> getAllSeatStatusByRoom(int floor, String roomName) {
-        List<Seat> seatList = new ArrayList<>();
-        
-        // SQL 설명: 
-        // 1. users u -> 현재 좌석을 사용 중인 사람의 정보
-        // 2. 서브쿼리(next_reserver_name) -> 현재 시간 이후, 대기 중인(PENDING) 가장 빠른 예약자 이름
-        String sql = "SELECT s.*, " +
-                "u.name AS current_user_realname, " +
-                "(SELECT u2.name FROM reservations r " +
-                " JOIN users u2 ON r.user_id = u2.id " +
-                " WHERE r.seat_id = s.id AND r.status = 'PENDING' " + 
-                // 시간 컬럼 대신 id로 정렬 (대부분의 경우 id순서 = 시간순서)
-                " ORDER BY r.id ASC LIMIT 1) AS next_reserver_name " +
-                "FROM seats s " +
-                "LEFT JOIN users u ON s.current_user_id = u.id " + 
-                "WHERE s.floor = ? AND s.room_index = ? ORDER BY s.seat_index";                     
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
-            pstmt.setInt(1, floor);
-            pstmt.setString(2, roomName);
-            
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    Seat seat = new Seat();
-                    seat.setId(rs.getInt("id"));
-                    seat.setFloor(rs.getInt("floor"));
-                    
-                    // DB 컬럼 room_index -> Java 필드 roomNumber
-                    seat.setRoomNumber(rs.getString("room_index"));
-                    
-                    // seat_index 처리 (없으면 0)
-                    try { 
-                        seat.setSeatIndex(rs.getInt("seat_index")); 
-                    } catch(Exception e) { 
-                        seat.setSeatIndex(0); 
-                    }
-                    
-                    // seat_number 처리 (없으면 index를 문자로 변환)
-                    String sNum = rs.getString("seat_number");
-                    if (sNum == null || sNum.isEmpty()) {
-                        seat.setSeatNumber(String.valueOf(seat.getSeatIndex()));
-                    } else {
-                        seat.setSeatNumber(sNum);
-                    }
-                    
-                    String status = normalizeStatus(rs.getString("status"));
-                    seat.setStatus(status);
-                    
-                    // ★필드 재활용 로직 시작★
-                    // 1. DB에서 가져온 실제 사용자 이름
-                    String actualUser = rs.getString("current_user_realname");
-                    // 2. DB에서 가져온 다음 예약자 이름
-                    String nextReserver = rs.getString("next_reserver_name");
-                    
-                    // currentUserId 세팅 (사용 중일 때만 유효)
-                    int uid = rs.getInt("current_user_id");
-                    if (!rs.wasNull()) seat.setCurrentUserId(uid);
-                    
-                    if ("U".equals(status)) {
-                        // 사용 중(U)일 때는 -> '사용자 이름'을 넣는다.
-                        seat.setCurrentUserName(actualUser != null ? actualUser : "사용자");
-                    } else {
-                        // 사용 중이 아닐 때(E, R, C)는 -> '예약자 이름'을 넣는다.
-                        // 예약자가 없으면 null이 들어감 -> 화면에서 '빈 좌석'으로 처리됨
-                        seat.setCurrentUserName(nextReserver); 
-                    }
-                    // ★필드 재활용 로직 끝★
-
-                    java.sql.Timestamp startTs = rs.getTimestamp("start_time");
-                    if (startTs != null) seat.setStartTime(startTs.toLocalDateTime());
-                    
-                    java.sql.Timestamp endTs = rs.getTimestamp("end_time");
-                    if (endTs != null) seat.setEndTime(endTs.toLocalDateTime());
-                    
-                    seatList.add(seat);
-                }
-            }
-        } catch (SQLException e) { 
-            System.out.println("getAllSeatStatusByRoom 중 DB 오류 발생");
-            e.printStackTrace(); 
-        }
-        return seatList;
-    }
-
-    // ★(신규) 예약 명단 조회 -> 문자열 리스트로 반환 (DTO 대체)
+    // 4. 특정 좌석의 예약자 명단 확인
     public List<String> getSeatReservations(int seatId) {
         List<String> list = new ArrayList<>();
-        
-        // users 테이블과 조인하여 이름, 학번, 시간을 가져옴
-        String sql = "SELECT r.id, r.user_id, u.name, r.seat_id, r.status " + 
-                "FROM reservations r " +
-                "JOIN users u ON r.user_id = u.id " +
-                "WHERE r.seat_id = ? AND r.status = 'PENDING'";
+        String sql = "SELECT u.name, u.st_id, r.reservation_time " + 
+                     "FROM reservations r " +
+                     "JOIN users u ON r.user_id = u.id " +
+                     "WHERE r.seat_id = ? AND r.status = 'PENDING'";
         
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -169,138 +84,183 @@ public class AdminDAOimpl {
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
                     String name = rs.getString("name");
-                    String stId = rs.getString("st_id");
-                    java.sql.Timestamp ts = rs.getTimestamp("start_time");
-                    String timeStr = (ts != null) ? ts.toLocalDateTime().toLocalTime().toString() : "시간미정";
-                    
-                    // 문자열로 포맷팅: "홍길동 (20201234) - 14:00"
-                    list.add(name + " (" + stId + ") - " + timeStr);
+                    String studentId = String.valueOf(rs.getInt("st_id")); 
+                    String timeStr = rs.getString("reservation_time");
+                    String time = (timeStr != null && timeStr.length() > 16) ? timeStr.substring(11, 16) : timeStr;
+                    list.add(name + " (" + studentId + ") - " + time);
                 }
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        } catch (SQLException e) { e.printStackTrace(); }
         return list;
     }
-    
-    // 패널티 추가
-    public boolean addPenalty(Connection conn, Penalty penalty, String reporterType) throws SQLException {
-        String sql = "INSERT INTO penalty (st_id, reason, report_time, reporter_type, seat_index) VALUES (?, ?, ?, ?, ?)";
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, penalty.getStId()); 
-            pstmt.setString(2, penalty.getReason()); 
-            pstmt.setObject(3, penalty.getReportTime()); 
-            pstmt.setString(4, reporterType); 
-            pstmt.setInt(5, penalty.getSeatIndex()); 
-            int rowsAffected = pstmt.executeUpdate();
-            return rowsAffected > 0;
-        } 
-    }
-    
-    // 유저 패널티 카운트 증가
-    public boolean incrementUserPenaltyCount(Connection conn, int userId) throws SQLException {
-        String sql = "UPDATE users SET penalty_count = penalty_count + 1 WHERE id = ?";
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, userId);
-            int rowsAffected = pstmt.executeUpdate();
-            return rowsAffected > 0;
-        }
+
+    // 5. 층 목록
+    public List<Integer> getFloors() {
+        List<Integer> floors = new ArrayList<>();
+        String sql = "SELECT DISTINCT floor FROM seats ORDER BY floor";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+            while (rs.next()) floors.add(rs.getInt("floor"));
+        } catch (SQLException e) { e.printStackTrace(); }
+        return floors;
     }
 
-    // 강제 퇴실
-    public boolean ejectUserFromSeat(int userId) {
-        String sql = "UPDATE seats SET status = 'E', current_user_id = NULL, " +
-                     "current_user_name = NULL, " + 
-                     "start_time = NULL, end_time = NULL WHERE current_user_id = ?";
+    // 6. 룸 목록
+    public List<String> getRoomsByFloor(int floor) {
+        List<String> rooms = new ArrayList<>();
+        String sql = "SELECT DISTINCT room_index FROM seats WHERE floor = ? ORDER BY room_index";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, userId); 
-            int rowsAffected = pstmt.executeUpdate();
-            return rowsAffected > 0;
-        } catch (SQLException e) {
-            System.out.println("ejectUserFromSeat 중 DB 오류 발생");
-            e.printStackTrace();
-            return false;
-        }
+            pstmt.setInt(1, floor);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) rooms.add(rs.getString("room_index"));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return rooms;
     }
     
-    // 좌석 상태 변경
-    public boolean setSeatStatus(int seatId, String newStatus) {
+    // 7. 좌석 정보 가져오기 (★수정됨: 예약 시간 확인 로직 추가)
+ // 7. 좌석 정보 가져오기 (수정: 학번 + 시간 정보 포함)
+    public List<Seat> getAllSeatStatusByRoom(int floor, String roomName) {
+        List<Seat> seats = new ArrayList<>();
+        
+        // ★ u.st_id 추가됨 (학번 가져오기)
+        String sql = "SELECT s.*, u.name AS user_name, u.st_id, " +
+                     "r.reservation_time AS start_time, " +
+                     "DATE_ADD(r.reservation_time, INTERVAL 4 HOUR) AS end_time " + 
+                     "FROM seats s " +
+                     "LEFT JOIN users u ON s.current_user_id = u.id " +
+                     "LEFT JOIN reservations r ON s.current_user_id = r.user_id " +
+                     "    AND s.id = r.seat_id " +
+                     "    AND (r.status = 'IN_USE' OR r.status = 'PENDING' OR r.status = 'NOSHOW') " + 
+                     "WHERE s.floor = ? AND s.room_index = ? " +
+                     "ORDER BY s.seat_index";
+                     
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, floor);
+            pstmt.setString(2, roomName);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Seat seat = new Seat();
+                    seat.setId(rs.getInt("id"));
+                    seat.setRoomNumber(rs.getString("room_index"));
+                    seat.setSeatIndex(rs.getInt("seat_index"));
+                    seat.setStatus(rs.getString("status"));
+                    seat.setFloor(rs.getInt("floor"));
+                    seat.setSeatNumber(rs.getString("seat_number"));
+                    
+                    int currentUid = rs.getInt("current_user_id");
+                    if (!rs.wasNull()) seat.setCurrentUserId(currentUid);
+                    
+                    // ★ [수정됨] 이름 + 학번 같이 저장 (예: "홍길동 (20231234)")
+                    String uName = rs.getString("user_name");
+                    int uId = rs.getInt("st_id");
+                    if(uName != null) {
+                        seat.setCurrentUserName(uName + "\n(" + uId + ")"); // 줄바꿈 추가
+                    } else {
+                        seat.setCurrentUserName(null);
+                    }
+
+                    // 시간 저장
+                    if (rs.getTimestamp("start_time") != null) {
+                        seat.setStartTime(rs.getTimestamp("start_time").toLocalDateTime());
+                    }
+                    if (rs.getTimestamp("end_time") != null) {
+                        seat.setEndTime(rs.getTimestamp("end_time").toLocalDateTime());
+                    }
+                    
+                    seats.add(seat);
+                }
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return seats;
+    }
+    
+    // 8. 패널티 부여 (ADMIN)
+    public boolean insertPenalty(int userId, String reason, int seatIndex) {
+        String sql = "INSERT INTO penalty (st_id, reason, seat_index, report_time, reporter_type) VALUES (?, ?, ?, NOW(), 'ADMIN')";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, userId);
+            pstmt.setString(2, reason);
+            pstmt.setInt(3, seatIndex);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) { e.printStackTrace(); return false; }
+    }
+    
+    // 9. 강제 퇴실
+    public boolean forceEjectUser(int userId, String reason) {
+        String sql = "UPDATE seats SET status = 'A', current_user_id = 0 WHERE current_user_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, userId);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) { e.printStackTrace(); return false; }
+    }
+    
+    // 10. 좌석 상태 변경
+    public boolean updateSeatStatus(int seatId, String status) {
         String sql = "UPDATE seats SET status = ? WHERE id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, normalizeStatus(newStatus)); 
+            pstmt.setString(1, status);
             pstmt.setInt(2, seatId);
-            int rowsAffected = pstmt.executeUpdate();
-            return rowsAffected > 0; 
-        } catch (SQLException e) {
-            System.out.println("setSeatStatus 중 DB 오류 발생");
-            e.printStackTrace();
-            return false;
-        }
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) { e.printStackTrace(); return false; }
     }
-    
-    // 유저 신고 목록 조회
-    public List<Penalty> getAllUserReports() {
-        List<Penalty> penaltyList = new ArrayList<>();
-        String sql = "SELECT p.*, u.name AS studentName, u.st_id AS studentRealId " +
-                     "FROM penalty p " +
-                     "LEFT JOIN users u ON p.st_id = u.id " +
-                     "WHERE p.reporter_type = 'USER' ORDER BY p.report_time DESC"; 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
-            while (rs.next()) {
-                Penalty p = new Penalty();
-                p.setNum(rs.getInt("num"));
-                p.setStId(rs.getInt("st_id"));
-                p.setReason(rs.getString("reason"));
-                try { p.setSeatIndex(rs.getInt("seat_index")); } catch(SQLException e) { p.setSeatIndex(0); }
-                java.sql.Timestamp ts = rs.getTimestamp("report_time");
-                if (ts != null) p.setReportTime(ts.toLocalDateTime());
-                p.setStudentName(rs.getString("studentName"));
-                p.setStudentRealId(rs.getString("studentRealId"));
-                penaltyList.add(p);
-            }
-        } catch (SQLException e) {
-            System.out.println("getAllUserReports 중 DB 오류 발생");
-            e.printStackTrace();
-        }
-        return penaltyList;
-    }
-    
-    // 관리자 패널티 목록 조회
+
+    // 11. 관리자 패널티 현황
     public List<Penalty> getAllAdminPenalties() {
-        List<Penalty> penaltyList = new ArrayList<>();
-        String sql = "SELECT p.*, u.name AS studentName, u.st_id AS studentRealId " +
+        List<Penalty> list = new ArrayList<>();
+        String sql = "SELECT p.num, p.seat_index, p.reason, p.report_time, u.st_id AS student_real_id, u.name " +
                      "FROM penalty p " +
-                     "LEFT JOIN users u ON p.st_id = u.id " +
-                     "WHERE p.reporter_type = 'ADMIN' ORDER BY p.report_time DESC"; 
+                     "JOIN users u ON p.st_id = u.id " + 
+                     "WHERE p.reporter_type = 'ADMIN' " + 
+                     "ORDER BY p.report_time DESC";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {
-            while (rs.next()) {
+            while(rs.next()) {
                 Penalty p = new Penalty();
-                p.setNum(rs.getInt("num"));
-                p.setStId(rs.getInt("st_id"));
+                p.setSeatIndex(rs.getInt("seat_index"));
+                p.setStudentRealId(String.valueOf(rs.getInt("student_real_id"))); 
+                p.setStudentName(rs.getString("name"));
                 p.setReason(rs.getString("reason"));
-                try { p.setSeatIndex(rs.getInt("seat_index")); } catch(SQLException e) { p.setSeatIndex(0); }
-                java.sql.Timestamp ts = rs.getTimestamp("report_time");
-                if (ts != null) p.setReportTime(ts.toLocalDateTime());
-                p.setStudentName(rs.getString("studentName"));
-                p.setStudentRealId(rs.getString("studentRealId"));
-                penaltyList.add(p);
+                if (rs.getTimestamp("report_time") != null) {
+                    p.setReportTime(rs.getTimestamp("report_time").toLocalDateTime());
+                }
+                list.add(p);
             }
-        } catch (SQLException e) {
-            System.out.println("getAllAdminPenalties 중 DB 오류 발생");
-            e.printStackTrace();
-        }
-        return penaltyList;
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
     }
     
-    private String normalizeStatus(String status) {
-        if (status == null || status.isEmpty()) return "G"; 
-        return status.trim().toUpperCase()
-                     .replace('Ｒ', 'R').replace('Ｇ', 'G').replace('Ｅ', 'E').replace('Ｃ', 'C').replace('Ｕ', 'U');
+    // 12. 신고 접수 목록
+    public List<Penalty> getAllUserReports() {
+        List<Penalty> list = new ArrayList<>();
+        String sql = "SELECT p.num, p.seat_index, u.st_id AS student_real_id, u.name, p.reason, p.report_time, u.id AS u_id " +
+                     "FROM penalty p " +
+                     "JOIN users u ON p.st_id = u.id " +
+                     "WHERE p.reporter_type = 'USER' " + 
+                     "ORDER BY p.report_time DESC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+            while(rs.next()) {
+                Penalty p = new Penalty();
+                p.setSeatIndex(rs.getInt("seat_index"));
+                p.setStudentRealId(String.valueOf(rs.getInt("student_real_id")));
+                p.setStudentName(rs.getString("name"));
+                p.setReason(rs.getString("reason"));
+                p.setStId(rs.getInt("u_id")); 
+                if (rs.getTimestamp("report_time") != null) {
+                    p.setReportTime(rs.getTimestamp("report_time").toLocalDateTime());
+                }
+                list.add(p);
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
     }
 }

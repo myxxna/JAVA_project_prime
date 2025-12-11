@@ -11,6 +11,7 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TableColumn; 
 import javafx.scene.control.TableView; 
@@ -19,6 +20,7 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;  
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.TableCell; 
+import javafx.scene.layout.HBox;
 import javafx.util.Callback; 
 import javafx.scene.layout.BorderPane; 
 import javafx.scene.layout.GridPane; 
@@ -32,11 +34,11 @@ import javafx.stage.Stage;
 import model.Seat;
 import model.Penalty; 
 import model.User; 
-import controller.kiosk.LoginController; 
 import service.AdminService;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter; 
+import java.time.temporal.ChronoUnit; 
 import java.util.List;
 import java.util.ArrayList; 
 import java.util.Optional; 
@@ -50,8 +52,6 @@ public class AdminController {
     private int currentSelectedFloor = 0; 
     private String currentSelectedRoom = null;
 
-    private final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
-
     @FXML private BorderPane adminRootPane; 
     @FXML private TilePane floorButtonContainer; 
     @FXML private VBox roomButtonContainer; 
@@ -60,12 +60,6 @@ public class AdminController {
     @FXML private Label selectedSeatLabel;
     @FXML private TextField actionField; 
     
-    // 버튼 FXML 주입
-    @FXML private Button penaltyButton;
-    @FXML private Button ejectButton;
-    @FXML private Button toggleBrokenButton;
-    @FXML private Button viewReservationButton; // ★신규 버튼
-
     @FXML private TableView<Penalty> reportTable; 
     @FXML private TableColumn<Penalty, Integer> reportSeatIdCol; 
     @FXML private TableColumn<Penalty, String> reportStudentIdCol; 
@@ -88,11 +82,17 @@ public class AdminController {
     public void initialize() {
         this.adminService = new AdminService(); 
         
+        // 1. 노쇼 자동 처리
+        adminService.processNoShow(); 
+
         createFloorButtons(); 
         setupReportTableColumns(); 
         setupAdminPenaltyTableColumns(); 
         loadUserReportsInBackground(); 
         loadAdminPenaltiesInBackground(); 
+        
+        setupOverdueList(); 
+        loadOverdueUsers(); 
         
         adminRootPane.sceneProperty().addListener((observable, oldScene, newScene) -> {
             if (newScene != null) {
@@ -106,6 +106,108 @@ public class AdminController {
                 });
             }
         });
+    }
+
+    private void setupOverdueList() {
+        overdueUserList.setCellFactory(param -> new ListCell<String>() {
+            private final Button btn = new Button("패널티");
+            private final HBox pane = new HBox(10);
+            private final Label label = new Label();
+            
+            {
+                btn.setStyle("-fx-background-color: #ff5c5c; -fx-text-fill: white; -fx-font-size: 10px; -fx-cursor: hand;");
+                pane.setAlignment(Pos.CENTER_LEFT);
+                pane.getChildren().addAll(label, btn);
+                
+                btn.setOnAction(event -> {
+                    String item = getItem();
+                    if (item != null) {
+                        String[] parts = item.split(",");
+                        if(parts.length >= 5) {
+                            int userId = Integer.parseInt(parts[0]);
+                            int seatIdx = Integer.parseInt(parts[1]);
+                            int resId = Integer.parseInt(parts[4]); 
+                            handleAutoPenalty(userId, seatIdx, "시간초과(30분)", resId);
+                        }
+                    }
+                });
+            }
+
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                    setText(null);
+                } else {
+                    try {
+                        String[] parts = item.split(",");
+                        if(parts.length >= 5) {
+                            String timeShort = parts[3].length() > 16 ? parts[3].substring(11, 16) : parts[3];
+                            String displayText = parts[2] + " (좌석:" + parts[1] + ") - " + timeShort;
+                            label.setText(displayText);
+                            setGraphic(pane);
+                        } else {
+                            setText(item);
+                            setGraphic(null);
+                        }
+                    } catch (Exception e) {
+                        setText(item);
+                        setGraphic(null);
+                    }
+                }
+            }
+        });
+    }
+
+    private void handleAutoPenalty(int userId, int seatIdx, String reason, int resId) {
+        Task<Boolean> task = new Task<>() {
+            @Override
+            protected Boolean call() throws Exception {
+                boolean success = adminService.grantPenalty(userId, reason, seatIdx);
+                if (success) {
+                    adminService.checkPenaltyDone(resId);
+                }
+                return success;
+            }
+        };
+        
+        task.setOnSucceeded(e -> {
+            if (task.getValue()) {
+                showAlert(AlertType.INFORMATION, "처리 완료", "패널티 부여 완료.");
+                loadOverdueUsers(); 
+                loadAdminPenaltiesInBackground(); 
+            } else {
+                showAlert(AlertType.ERROR, "오류", "패널티 부여 실패");
+            }
+        });
+        
+        new Thread(task).start();
+    }
+    
+    private void loadOverdueUsers() {
+        Task<List<String>> task = new Task<>() {
+            @Override
+            protected List<String> call() throws Exception {
+                return adminService.getOverdueUsers();
+            }
+        };
+
+        task.setOnSucceeded(e -> {
+            List<String> list = task.getValue();
+            if (list == null || list.isEmpty()) {
+                overdueUserList.setItems(FXCollections.observableArrayList());
+                overdueUserList.setPlaceholder(new Label("시간 초과자 없음"));
+            } else {
+                overdueUserList.setItems(FXCollections.observableArrayList(list));
+            }
+        });
+
+        task.setOnFailed(e -> {
+            e.getSource().getException().printStackTrace();
+        });
+
+        new Thread(task).start();
     }
     
     private void createFloorButtons() {
@@ -228,25 +330,33 @@ public class AdminController {
         new Thread(loadSeatsTask).start();
     }
 
+    // ★ [수정됨] 좌석 클릭 시 하단 라벨에 '이용 시간' 표시 로직 추가
     private void setSelectedSeat(Seat seat) {
         this.selectedSeat = seat;
         if (selectedSeat != null) {
-            String seatNum = selectedSeat.getSeatNumber();
-            String status = selectedSeat.getStatus(); 
-            String nameValue = selectedSeat.getCurrentUserName(); // DAO에서 넣어준 값
+            String seatNum = seat.getSeatNumber();
+            String status = seat.getStatus(); 
+            String nameValue = seat.getCurrentUserName(); 
             
+            // 기본 텍스트
             String infoText = "좌석: " + seatNum;
-            
+
             if ("U".equals(status)) {
-                // 사용 중일 때
-                infoText += " (사용자: " + (nameValue != null ? nameValue : "없음") + ")";
-            } else {
-                // 미사용일 때 (예약자 있는지 확인)
-                if (nameValue != null && !nameValue.isEmpty()) {
-                    infoText += " (예약자: " + nameValue + ")";
-                } else {
-                    infoText += " (빈 좌석)";
+                infoText += " (사용자: " + (nameValue != null ? nameValue.replace("\n", " ") : "없음") + ")";
+                
+                // ★ 여기가 핵심! 시간 정보가 있으면 라벨에 추가
+                if (seat.getStartTime() != null && seat.getEndTime() != null) {
+                    String start = seat.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm"));
+                    String end = seat.getEndTime().format(DateTimeFormatter.ofPattern("HH:mm"));
+                    infoText += "  |  이용 시간: " + start + " ~ " + end;
                 }
+                
+            } else if ("R".equals(status)) {
+                infoText += " (예약자: " + (nameValue != null ? nameValue.replace("\n", " ") : "") + ")";
+            } else if ("M".equals(status)) {
+                infoText += " (점검중)";
+            } else {
+                infoText += " (빈 좌석)";
             }
             selectedSeatLabel.setText(infoText);
         } else {
@@ -332,7 +442,13 @@ public class AdminController {
     void handleToggleBroken(ActionEvent event) {
         if (selectedSeat == null) { showAlert(AlertType.ERROR, "오류", "먼저 좌석을 선택하세요."); return; }
         String currentStatus = selectedSeat.getStatus(); 
-        String newStatus = ("E".equals(currentStatus) || "G".equals(currentStatus)) ? "C" : ("C".equals(currentStatus) ? "E" : null);
+        String newStatus = null;
+        if ("A".equals(currentStatus)) {
+            newStatus = "M"; 
+        } else if ("M".equals(currentStatus)) {
+            newStatus = "A"; 
+        }
+
         if (newStatus == null) { showAlert(AlertType.WARNING, "변경 불가", "사용 중이거나 예약 중인 좌석은 변경할 수 없습니다."); return; }
         
         Alert confirmAlert = new Alert(AlertType.CONFIRMATION);
@@ -356,7 +472,6 @@ public class AdminController {
         }
     }
 
-    // ★(신규) 예약 명단 확인 버튼 클릭 시 실행
     @FXML
     void handleViewReservations(ActionEvent event) {
         if (selectedSeat == null) {
@@ -364,7 +479,6 @@ public class AdminController {
             return;
         }
         
-        // DAO에서 문자열 리스트로 변환된 예약 명단을 받아옴
         List<String> list = adminService.getReservations(selectedSeat.getId());
         
         StringBuilder msg = new StringBuilder();
@@ -383,7 +497,6 @@ public class AdminController {
         alert.showAndWait();
     }
 
-    // 좌석 시각화
     private void renderVisualSeats(List<Seat> seatList, String roomName) {
         visualSeatGrid.getChildren().clear(); 
         int autoIndex = 0; 
@@ -424,7 +537,7 @@ public class AdminController {
         }
     }
 
-    // 좌석 UI 박스 생성
+    // ★ [수정됨] 좌석 박스 안에는 이름과 학번만 표시 (시간 삭제)
     private StackPane createSeatPane(Seat seat) {
         Rectangle rect = new Rectangle(100, 70); 
         rect.setStroke(Color.DARKGRAY);
@@ -437,44 +550,51 @@ public class AdminController {
         
         Label infoLabel = new Label();
         infoLabel.setFont(new Font("Arial", 11)); 
+        infoLabel.setAlignment(Pos.CENTER); 
         
-        // ★예약확인 버튼 (좌석 안에 삽입)
         Button reserveListBtn = new Button("예약확인");
         reserveListBtn.setStyle("-fx-font-size: 9px; -fx-padding: 2 5 2 5;");
         reserveListBtn.setOnAction(e -> {
-            selectedSeat = seat; // 버튼 눌러도 선택된 것으로 처리
+            selectedSeat = seat; 
             handleViewReservations(null);
         });
 
         String status = seat.getStatus();
-        // DAO가 채워 넣은 값을 가져옴 (사용자 이름 또는 예약자 이름)
         String nameValue = seat.getCurrentUserName(); 
         
-        if ("U".equals(status)) {
-            // [사용 중] 파란색
-            rect.setFill(Color.GRAY);
-            infoLabel.setText(nameValue != null ? nameValue : "사용자");
-        } else {
-            // [미사용]
-            if (nameValue != null && !nameValue.isEmpty()) {
-                // 이름이 있으면 예약자임 -> 노란색
-                rect.setFill(Color.LIGHTYELLOW);
-                infoLabel.setText("예약: " + nameValue);
-            } else {
-                // 이름 없으면 빈 좌석 -> 회색
-                rect.setFill(Color.LIGHTGRAY);
-                infoLabel.setText("빈 좌석");
+        boolean isReservedSoon = false;
+        if (seat.getStartTime() != null) {
+            long minutes = ChronoUnit.MINUTES.between(LocalDateTime.now(), seat.getStartTime());
+            if (minutes >= 0 && minutes <= 30) {
+                isReservedSoon = true;
             }
         }
+
+        if ("U".equals(status)) {
+            rect.setFill(Color.LIGHTBLUE); 
+            // ★ 여기 시간이 빠지고 이름(학번)만 들어갑니다.
+            infoLabel.setText(nameValue != null ? nameValue : "사용중");
+            
+        } else if ("M".equals(status)) {
+            rect.setFill(Color.INDIANRED);
+            infoLabel.setText("점검중");
+            
+        } else if ("R".equals(status) || isReservedSoon) {
+            rect.setFill(Color.LIGHTYELLOW);
+            infoLabel.setText("예약중");
+            
+        } else {
+            rect.setFill(Color.LIGHTGRAY);
+            infoLabel.setText("빈 좌석");
+        }
         
-        VBox content = new VBox(3, seatLabel, infoLabel, reserveListBtn); 
+        VBox content = new VBox(2, seatLabel, infoLabel, reserveListBtn); 
         content.setAlignment(Pos.CENTER);
         
         StackPane seatPane = new StackPane(rect, content); 
         seatPane.setUserData(seat); 
 
         seatPane.setOnMouseClicked(event -> {
-            // 버튼 클릭이 아닐 때만 좌석 선택 이벤트 발생
             if (!event.getTarget().equals(reserveListBtn)) {
                 setSelectedSeat((Seat) seatPane.getUserData()); 
                 highlightSelectedSeat(seatPane); 
