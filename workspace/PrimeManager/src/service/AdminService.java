@@ -1,91 +1,65 @@
 package service;
 
-import impl.AdminDAOimpl; 
+import impl.AdminDAOimpl;
 import model.Penalty;
 import model.Seat;
-import config.DBConnection; 
-
-import java.sql.Connection; 
-import java.sql.SQLException; 
-import java.time.LocalDateTime; 
 import java.util.List;
 
 public class AdminService {
-
-    private AdminDAOimpl adminDAO; 
-
+    
+    private AdminDAOimpl adminDao;
+    
     public AdminService() {
-        this.adminDAO = new AdminDAOimpl(); 
+        this.adminDao = new AdminDAOimpl();
     }
-
+    
     public List<Integer> getFloors() {
-        return adminDAO.getUniqueFloors();
+        return adminDao.getFloors();
     }
     
     public List<String> getRoomsByFloor(int floor) {
-        return adminDAO.getUniqueRoomsByFloor(floor);
-    }
-    
-    public List<String> getRoomNames() {
-        return adminDAO.getUniqueRoomNames();
+        return adminDao.getRoomsByFloor(floor);
     }
     
     public List<Seat> getSeatsByRoom(int floor, String roomName) {
-        return adminDAO.getAllSeatStatusByRoom(floor, roomName);
+        return adminDao.getAllSeatStatusByRoom(floor, roomName);
     }
     
-    // ★(신규) 예약 명단을 문자열 리스트로 반환
-    public List<String> getReservations(int seatId) {
-        return adminDAO.getSeatReservations(seatId);
-    }
-    
-    // 트랜잭션 적용된 패널티 부여
     public boolean grantPenalty(int userId, String reason, int seatIndex) {
-        try (Connection conn = DBConnection.getConnection()) {
-            conn.setAutoCommit(false); 
-            try {
-                Penalty penalty = new Penalty(); 
-                penalty.setStId(userId); 
-                penalty.setReason(reason);
-                penalty.setReportTime(LocalDateTime.now()); 
-                penalty.setSeatIndex(seatIndex); 
-                
-                boolean step1 = adminDAO.addPenalty(conn, penalty, "ADMIN");
-                boolean step2 = adminDAO.incrementUserPenaltyCount(conn, userId);
-                
-                if (step1 && step2) {
-                    conn.commit();
-                    return true;
-                } else {
-                    conn.rollback();
-                    return false;
-                }
-            } catch (SQLException e) {
-                System.out.println("grantPenalty 서비스 트랜잭션 오류: " + e.getMessage());
-                e.printStackTrace();
-                conn.rollback(); 
-                return false;
-            }
-        } catch (SQLException e) {
-            System.out.println("grantPenalty 서비스 Connection 획득 오류: " + e.getMessage());
-            e.printStackTrace();
-            return false;
-        }
+        return adminDao.insertPenalty(userId, reason, seatIndex);
     }
     
     public boolean forceEjectUser(int userId, String reason) {
-        return adminDAO.ejectUserFromSeat(userId);
+        return adminDao.forceEjectUser(userId, reason);
     }
     
-    public boolean setSeatStatus(int seatId, String newStatus) {
-        return adminDAO.setSeatStatus(seatId, newStatus);
-    }
-
-    public List<Penalty> getAllUserReports() {
-        return adminDAO.getAllUserReports();
+    public boolean setSeatStatus(int seatId, String status) {
+        return adminDao.updateSeatStatus(seatId, status);
     }
     
-    public List<Penalty> getAllAdminPenalties() {
-        return adminDAO.getAllAdminPenalties();
+    // 예약자 명단 가져오기
+    public List<String> getReservations(int seatId) {
+        return adminDao.getSeatReservations(seatId);
     }
+    
+    // --- [신규 기능] ---
+    
+    // 1. 노쇼 처리 (30분 지난 것 상태 변경)
+    public void processNoShow() {
+        adminDao.processNoShowReservations();
+    }
+    
+    // 2. 시간 초과자(NOSHOW) 목록 가져오기
+    public List<String> getOverdueUsers() {
+        return adminDao.getOverdueReservations();
+    }
+    
+    // 3. 패널티 부여 후 예약 상태 변경 (PENALIZED)
+    public void checkPenaltyDone(int reservationId) {
+        adminDao.updateReservationStatusToPenalized(reservationId);
+    }
+    
+    // 기타 메서드 연결
+    public List<Penalty> getAllUserReports() { return adminDao.getAllUserReports(); }
+    public List<Penalty> getAllAdminPenalties() { return adminDao.getAllAdminPenalties(); }
 }
