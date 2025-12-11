@@ -8,6 +8,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Optional;
 
 public class UserDAOImpl implements IUserDAO {
 
@@ -41,7 +42,19 @@ public class UserDAOImpl implements IUserDAO {
     //        }
     //        return null;
     //    }
-        
+      
+	private User mapResultSetToUser(ResultSet rs) throws SQLException {
+        // Model의 Setter를 사용하여 객체 생성 (이전 답변에서 생성자 대신 사용 가정)
+        User user = new User();
+        user.setId(rs.getInt("id"));
+        user.setStudentId(rs.getString("st_id")); // DB: st_id (INT)를 Model: String으로 변환
+        user.setName(rs.getString("name"));
+        user.setPenaltyCount(rs.getInt("penalty_count"));
+        user.setRole(rs.getString("role"));
+        user.setPassword(rs.getString("password"));
+        return user;
+    }
+	
     // --- 2. 기존 로그인 (ID/PW 동시 검증) ---
     @Override
     public User login(String studentId, String password) {
@@ -76,6 +89,24 @@ public class UserDAOImpl implements IUserDAO {
         return null;
     }
 
+    @Override
+    public Optional<User> findById(int id) {
+        String sql = "SELECT * FROM users WHERE id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setInt(1, id);
+            
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapResultSetToUser(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return Optional.empty();
+    }
     // ------------------------------------------------------------------
     // 👇👇👇 [오류 수정] 회원가입을 위해 추가된 메서드 👇👇👇
     // ------------------------------------------------------------------
