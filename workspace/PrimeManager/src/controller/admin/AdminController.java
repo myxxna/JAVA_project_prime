@@ -57,7 +57,10 @@ public class AdminController {
     @FXML private BorderPane adminRootPane; 
     @FXML private TilePane floorButtonContainer; 
     @FXML private VBox roomButtonContainer; 
+    
+    // ★ [핵심 변경] TableView 대신 GridPane 사용 (좌석 시각화)
     @FXML private GridPane visualSeatGrid; 
+    
     @FXML private ListView<String> overdueUserList; 
     @FXML private Label selectedSeatLabel;
     @FXML private TextField actionField; 
@@ -322,21 +325,52 @@ public class AdminController {
         new Thread(task).start();
     }
     
-    // --- [층/룸 버튼 생성 메서드] --- (이 부분이 빠져서 오류가 났었습니다)
+    // --- [층/룸 버튼 생성 메서드] --- 
 
     private void createFloorButtons() {
         List<Integer> floors = adminService.getFloors();
         floorButtonContainer.getChildren().clear();
+        
         for (Integer floor : floors) {
             ToggleButton btn = new ToggleButton(floor + "층");
             btn.setToggleGroup(floorGroup);
             btn.setPrefWidth(100);
             btn.setPrefHeight(40);
             btn.setStyle("-fx-background-color: #ffffff; -fx-background-radius: 5; -fx-border-color: #cccccc; -fx-border-radius: 5; -fx-font-weight: bold;");
+            
             btn.setOnAction(e -> {
                 if (btn.isSelected()) {
                     updateButtonStyles(floorGroup);
-                    createRoomButtons(floor);
+                    
+                    // =========================================================
+                    // ★ [수정] 7층이면 룸 선택 단계 생략하고 바로 로드!
+                    // =========================================================
+                    if (floor == 7) {
+                        // 1. 룸 버튼 영역을 깨끗하게 비움 (선택할 필요 없으므로)
+                        roomButtonContainer.getChildren().clear();
+                        
+                        // 2. 7층에 존재하는 방 이름을 내부적으로 가져옴
+                        List<String> rooms = adminService.getRoomsByFloor(floor);
+                        
+                        if (rooms != null && !rooms.isEmpty()) {
+                            // 3. 첫 번째 방을 자동으로 선택한 것으로 처리
+                            currentSelectedFloor = floor;
+                            currentSelectedRoom = rooms.get(0); // 첫 번째 방 이름 가져오기
+                            
+                            // 4. 바로 좌석 로딩 시작!
+                            loadSeatsForRoomInBackground(floor, currentSelectedRoom);
+                            setSelectedSeat(null); // 선택 초기화
+                        } else {
+                            // 혹시 7층에 데이터가 아예 없으면 그리드 비움
+                            visualSeatGrid.getChildren().clear();
+                        }
+                    } 
+                    // =========================================================
+                    // ★ 그 외 층(4층 등)은 기존처럼 룸 버튼 생성
+                    // =========================================================
+                    else {
+                        createRoomButtons(floor);
+                    }
                 }
             });
             floorButtonContainer.getChildren().add(btn);
@@ -347,7 +381,7 @@ public class AdminController {
         currentSelectedFloor = floor; 
         List<String> rooms = adminService.getRoomsByFloor(floor);
         roomButtonContainer.getChildren().clear();
-        visualSeatGrid.getChildren().clear(); 
+        visualSeatGrid.getChildren().clear(); // 기존 그리드 초기화
         for (String room : rooms) {
             ToggleButton btn = new ToggleButton(room);
             btn.setToggleGroup(roomGroup);
@@ -377,7 +411,7 @@ public class AdminController {
         });
     }
     
-    // --- [좌석 시각화 및 정보 표시] ---
+    // --- [★ 수정됨 ★] 좌석 시각화 및 정보 표시 (TableView 대신 GridPane)
 
     private void loadSeatsForRoomInBackground(int floor, String roomName) {
         visualSeatGrid.getChildren().clear(); 
@@ -421,46 +455,118 @@ public class AdminController {
         }
     }
 
+    // [메서드 1] DB 데이터를 바탕으로 네모난 좌석들을 배치
     private void renderVisualSeats(List<Seat> seatList, String roomName) {
         visualSeatGrid.getChildren().clear(); 
+        
         int autoIndex = 0; 
         int columnsPerRow = 6; 
 
         for (Seat seat : seatList) {
             StackPane seatPane = createSeatPane(seat); 
             String seatNumber = seat.getSeatNumber(); 
+            
             int colIndex = 0;
             int rowIndex = 0;
 
-            if (seatNumber == null || seatNumber.trim().isEmpty()) {
+            try {
+                String numStr = (seatNumber != null) ? seatNumber.replaceAll("[^0-9]", "") : "0";
+                int n = Integer.parseInt(numStr);
+
+                // =========================================================
+                // ★ Case 0: 7층 (무조건 가로로 4개 짜라락)
+                // =========================================================
+                if (currentSelectedFloor == 7) {
+                    // 1. 위치: 무조건 첫 번째 줄(0행)에 순서대로(autoIndex) 배치
+                    rowIndex = 0;
+                    colIndex = autoIndex; 
+                    
+                    // 2. 스타일: 큼직하게 (가로 180, 세로 250)
+                    seatPane.setPrefSize(180, 250);
+                    
+                    // 3. 폰트: 아주 크게 (30pt)
+                    if (!seatPane.getChildren().isEmpty() && seatPane.getChildren().get(0) instanceof VBox) {
+                        VBox content = (VBox) seatPane.getChildren().get(0);
+                        if (!content.getChildren().isEmpty() && content.getChildren().get(0) instanceof Label) {
+                            Label numberLabel = (Label) content.getChildren().get(0);
+                            numberLabel.setFont(Font.font("Arial", FontWeight.BOLD, 30)); 
+                        }
+                    }
+                    
+                    autoIndex++; // 다음 좌석은 옆칸으로
+                }
+                
+                // =========================================================
+                // ★ Case 1: 4층 개인석 (지도 모양)
+                // =========================================================
+                else if (roomName.contains("개인")) {
+                    if (n >= 1 && n <= 10) { 
+                        rowIndex = 0; colIndex = n - 1; 
+                    } else if (n >= 11 && n <= 16) {
+                        rowIndex = 2; 
+                        int group = (n - 11) / 2;
+                        int posInGroup = (n - 11) % 2; 
+                        colIndex = (group * 3) + posInGroup + 1; 
+                    } else if (n >= 17 && n <= 22) {
+                        rowIndex = 3; 
+                        int group = (n - 17) / 2;
+                        int posInGroup = (n - 17) % 2;
+                        colIndex = (group * 3) + posInGroup + 1;
+                    } else {
+                        colIndex = autoIndex % columnsPerRow;
+                        rowIndex = 5 + (autoIndex / columnsPerRow);
+                        autoIndex++;
+                    }
+                }
+                
+                // =========================================================
+                // ★ Case 2: 4층 단체석 (분단 배치)
+                // =========================================================
+                else if (roomName.contains("단체")) {
+                    if (n >= 1 && n <= 8) {
+                        colIndex = (n - 1) % 4;
+                        rowIndex = (n <= 4) ? 0 : 2;
+                    } else if (n >= 9 && n <= 16) {
+                        colIndex = ((n - 9) % 4) + 6;
+                        rowIndex = (n <= 12) ? 0 : 2;
+                    } else {
+                        colIndex = autoIndex % columnsPerRow;
+                        rowIndex = 4 + (autoIndex / columnsPerRow);
+                        autoIndex++;
+                    }
+                }
+                
+                // =========================================================
+                // ★ Case 3: 그 외 (기본 배치)
+                // =========================================================
+                else {
+                    if (seatNumber == null || seatNumber.trim().isEmpty()) {
+                        colIndex = autoIndex % columnsPerRow;
+                        rowIndex = autoIndex / columnsPerRow;
+                        autoIndex++; 
+                    } else {
+                        if (n > 100) { 
+                             colIndex = autoIndex % columnsPerRow;
+                             rowIndex = autoIndex / columnsPerRow;
+                             autoIndex++;
+                        } else {
+                             colIndex = (n - 1) % columnsPerRow;
+                             rowIndex = (n - 1) / columnsPerRow;
+                        }
+                    }
+                }
+
+            } catch (Exception e) {
                 colIndex = autoIndex % columnsPerRow;
                 rowIndex = autoIndex / columnsPerRow;
-                Label label = (Label)((VBox)seatPane.getChildren().get(0)).getChildren().get(0);
-                label.setText("NO." + seat.getId()); 
-                label.setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
-                autoIndex++; 
-            } else {
-                try {
-                    char rowChar = seatNumber.toUpperCase().charAt(0);
-                    if (Character.isDigit(rowChar)) {
-                        int num = Integer.parseInt(seatNumber);
-                        rowIndex = (num - 1) / columnsPerRow;
-                        colIndex = (num - 1) % columnsPerRow;
-                    } else {
-                        rowIndex = rowChar - 'A'; 
-                        String colStr = seatNumber.substring(1);
-                        colIndex = (colStr.isEmpty()) ? 0 : Integer.parseInt(colStr) - 1;
-                    }
-                } catch (Exception e) {
-                    colIndex = autoIndex % columnsPerRow;
-                    rowIndex = autoIndex / columnsPerRow;
-                    autoIndex++;
-                }
+                autoIndex++;
             }
+            
             visualSeatGrid.add(seatPane, colIndex, rowIndex);
         }
     }
 
+    // [메서드 2] 좌석 하나를 디자인하는 곳 (CSS 없이 자바 코드로 스타일링)
     private StackPane createSeatPane(Seat seat) {
         StackPane seatPane = new StackPane();
         seatPane.setPrefSize(90, 70); 
@@ -475,6 +581,7 @@ public class AdminController {
         String status = seat.getStatus();
         String nameValue = seat.getCurrentUserName(); 
         
+        // --- 스타일 정의 (CSS 대체) ---
         String COLOR_WHITE = "-fx-background-color: white; -fx-border-color: #dcdcdc; -fx-text-fill: black;";
         String COLOR_RED   = "-fx-background-color: #e04f5f; -fx-border-color: #e04f5f; -fx-text-fill: white;";
         String COLOR_GRAY  = "-fx-background-color: #d3d3d3; -fx-border-color: #d3d3d3; -fx-text-fill: #777777;";
@@ -489,6 +596,7 @@ public class AdminController {
             if (minutes >= 0 && minutes <= 30) isReservedSoon = true;
         }
 
+        // 상태별 색상 적용
         if ("U".equals(status)) {
             seatPane.setStyle(commonStyle + COLOR_BLUE);
             seatLabel.setStyle("-fx-text-fill: white;");
@@ -497,6 +605,7 @@ public class AdminController {
         } else if ("M".equals(status)) {
             seatPane.setStyle(commonStyle + COLOR_GRAY);
             seatLabel.setStyle("-fx-text-fill: #666666;");
+            userLabel.setText("점검중");
         } else if ("R".equals(status) || isReservedSoon) {
             seatPane.setStyle(commonStyle + "-fx-background-color: #fffacd; -fx-border-color: #f0e68c; -fx-text-fill: black;");
             userLabel.setText("예약중");
@@ -510,26 +619,32 @@ public class AdminController {
         seatPane.getChildren().add(content);
         seatPane.setUserData(seat); 
 
+        // 클릭 이벤트
         seatPane.setOnMouseClicked(event -> {
             setSelectedSeat((Seat) seatPane.getUserData()); 
             highlightSelectedSeat(seatPane); 
         });
         
+        // 마우스 호버 효과
         seatPane.setOnMouseEntered(e -> seatPane.setOpacity(0.8));
         seatPane.setOnMouseExited(e -> seatPane.setOpacity(1.0));
 
         return seatPane;
     }
     
+    // [메서드 3] 선택된 좌석 강조 효과
     private void highlightSelectedSeat(StackPane clickedSeatPane) {
+        // 기존 효과 제거 (모든 자식 순회)
         for (javafx.scene.Node node : visualSeatGrid.getChildren()) {
             if (node instanceof StackPane) {
                 StackPane pane = (StackPane) node;
+                // 기본 그림자로 복구
                 pane.setEffect(new DropShadow(5, javafx.scene.paint.Color.rgb(0,0,0,0.1))); 
                 pane.setScaleX(1.0);
                 pane.setScaleY(1.0);
             }
         }
+        // 선택된 것만 강조 (파란 그림자 + 확대)
         clickedSeatPane.setEffect(new DropShadow(15, javafx.scene.paint.Color.DODGERBLUE));
         clickedSeatPane.setScaleX(1.05); 
         clickedSeatPane.setScaleY(1.05);
@@ -614,6 +729,15 @@ public class AdminController {
         }
     }
 
+    private void showAlert(AlertType type, String title, String message) {
+        Platform.runLater(() -> {
+            Alert alert = new Alert(type);
+            alert.setTitle(title);
+            alert.setHeaderText(null);
+            alert.setContentText(message);
+            alert.showAndWait();
+        });
+    }
     @FXML
     void handleViewReservations(ActionEvent event) {
         if (selectedSeat == null) {
@@ -621,9 +745,11 @@ public class AdminController {
             return;
         }
         
+        // 서비스에서 예약자 명단 가져오기
         List<String> list = adminService.getReservations(selectedSeat.getId());
+        
         StringBuilder msg = new StringBuilder();
-        if (list.isEmpty()) {
+        if (list == null || list.isEmpty()) {
             msg.append("현재 예약 대기자가 없습니다.");
         } else {
             for (int i = 0; i < list.size(); i++) {
@@ -637,14 +763,5 @@ public class AdminController {
         alert.setContentText(msg.toString());
         alert.showAndWait();
     }
-
-    private void showAlert(AlertType type, String title, String message) {
-        Platform.runLater(() -> {
-            Alert alert = new Alert(type);
-            alert.setTitle(title);
-            alert.setHeaderText(null);
-            alert.setContentText(message);
-            alert.showAndWait();
-        });
-    }
+    
 }
