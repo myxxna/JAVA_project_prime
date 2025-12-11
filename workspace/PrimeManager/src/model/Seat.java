@@ -4,47 +4,51 @@ import java.time.LocalDateTime;
 
 public class Seat {
 
-    private int id;                     // DB column: id (INT)
-    private Integer currentUserId;      // DB column: current_user_id (INT) - NULL 가능하므로 Integer 사용
-    private String currentUserName;     // DB column: current_user_name (VARCHAR)
-    private int floor;                  // DB column: floor (INT)
-    private String roomIndex;           // DB column: room_index (VARCHAR) - 기존 roomNumber 대체 가능성 큼
-    private int seatIndex;              // DB column: seat_index (INT)
-    private String status;              // DB column: status (VARCHAR)
-    private LocalDateTime startTime;    // DB column: start_time (DATETIME)
-    private LocalDateTime endTime;      // DB column: end_time (DATETIME)
-    private String seatNumber;          // DB column: seat_number (VARCHAR)
+    private int id;
+    private String number;
 
-    // 기본 생성자
+    private int row;
+    private int col;
+
+    private int floor;
+    private String roomNumber;
+    private int seatIndex;
+    private String status;
+    private Integer currentUserId;
+    private String currentUserName;
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
+
     public Seat() {
     }
 
-    // 필수 정보 기반 생성자
-    public Seat(int id, int floor, String roomIndex, int seatIndex, String seatNumber) {
+    public Seat(int id, String number, int row, int col) {
         this.id = id;
+        this.number = number;
+        this.row = row;
         this.floor = floor;
-        this.roomIndex = roomIndex;
-        this.seatIndex = seatIndex;
-        this.seatNumber = seatNumber;
-        this.status = "Available"; // 기본 상태 설정 (예시)
+        
+        this.col = col;
+        this.status = "G";
     }
-
-    // Getters and Setters
 
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
 
-    public Integer getCurrentUserId() { return currentUserId; }
-    public void setCurrentUserId(Integer currentUserId) { this.currentUserId = currentUserId; }
+    public String getNumber() { return number; }
+    public String getSeatNumber() { return number; }
+    public void setSeatNumber(String number) { this.number = number; }
 
-    public String getCurrentUserName() { return currentUserName; }
-    public void setCurrentUserName(String currentUserName) { this.currentUserName = currentUserName; }
+    public int getRow() { return row; }
+    public void setRow(int row) { this.row = row; }
+    public int getCol() { return col; }
+    public void setCol(int col) { this.col = col; }
 
     public int getFloor() { return floor; }
     public void setFloor(int floor) { this.floor = floor; }
 
-    public String getRoomNumber() { return roomIndex; }
-    public void setRoomNumber(String roomIndex) { this.roomIndex = roomIndex; }
+    public String getRoomNumber() { return roomNumber; }
+    public void setRoomNumber(String roomNumber) { this.roomNumber = roomNumber; }
 
     public int getSeatIndex() { return seatIndex; }
     public void setSeatIndex(int seatIndex) { this.seatIndex = seatIndex; }
@@ -52,12 +56,15 @@ public class Seat {
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
+    public Integer getCurrentUserId() { return currentUserId; }
+    public void setCurrentUserId(Integer currentUserId) { this.currentUserId = currentUserId; }
+
+    public String getCurrentUserName() { return currentUserName; }
+    public void setCurrentUserName(String currentUserName) { this.currentUserName = currentUserName; }
+
     public LocalDateTime getStartTime() { return startTime; }
     public void setStartTime(LocalDateTime startTime) { this.startTime = startTime; }
 
     public LocalDateTime getEndTime() { return endTime; }
     public void setEndTime(LocalDateTime endTime) { this.endTime = endTime; }
-
-    public String getSeatNumber() { return seatNumber; }
-    public void setSeatNumber(String seatNumber) { this.seatNumber = seatNumber; }
 }

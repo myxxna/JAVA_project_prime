@@ -1,27 +1,50 @@
 package service;
 
 import impl.ReservationDAOImpl;
+import interfaces.IReservationDAO;
 import model.Reservation;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 public class ReservationService {
 
-    private ReservationDAOImpl reservationDAO = new ReservationDAOImpl();
+    private final IReservationDAO reservationDAO = new ReservationDAOImpl();
 
-    // 예약 처리 메서드
-    public boolean makeReservation(int userId, int seatId, LocalDateTime startTime, int durationHours) {
-        
-        // 1. 예약 객체 생성
-        Reservation reservation = new Reservation();
-        reservation.setUserId(userId);
-        reservation.setSeatId(seatId);
-        reservation.setReservationTime(startTime); // 입실 시간
-        reservation.setDurationMinutes(durationHours * 60); // 시간 -> 분 변환
-        reservation.setStatus("R"); // ★ 요청하신 대로 Status 'R' 설정
+    public boolean reserveSeat(String userId, int seatId, int durationMinutes) {
+        Reservation newReservation = new Reservation(userId, seatId, LocalDateTime.now(), durationMinutes);
+        return reservationDAO.createReservation(newReservation);
+    }
 
-        // 2. DAO를 통해 DB에 저장
-        // (심화 기능: 여기서 해당 시간에 이미 예약이 있는지 체크하는 로직 추가 가능)
-        
-        return reservationDAO.insertReservation(reservation);
+    public boolean checkIn(String userId) {
+        return reservationDAO.updateStatusToInUse(userId);
+    }
+
+    public boolean cancelReservation(String userId) {
+        return reservationDAO.cancelReservation(userId);
+    }
+
+    public boolean checkOut(long reservationId) {
+        return reservationDAO.finishReservation(reservationId, LocalDateTime.now());
+    }
+
+    public int extendReservation(long reservationId, int minutes) {
+
+        boolean success = reservationDAO.updateExpectedEndTime(reservationId, null, minutes);
+
+        if (success) return 1;
+
+        return -1;
+    }
+
+    public Reservation findActiveReservationByUserId(String userId) {
+        return reservationDAO.findActiveReservationByUserId(userId);
+    }
+
+    public Reservation getActiveReservationBySeatId(int seatId) {
+        return reservationDAO.findActiveReservationBySeatId(seatId);
+    }
+
+    public Map<Integer, Reservation> getAllActiveSeatReservations() {
+        return reservationDAO.getAllActiveSeatReservations();
     }
 }
