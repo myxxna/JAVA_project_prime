@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.text.Text?>
+
+<AnchorPane xmlns="http://javafx.com/javafx/17" 
+            xmlns:fx="http://javafx.com/fxml/1" 
+            fx:controller="controller.kiosk.SeatController"
+            style="-fx-background-color: #f4f4f4;">
+
+    <VBox spacing="0" alignment="TOP_CENTER" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        
+        <VBox alignment="CENTER" spacing="10" style="-fx-padding: 20 0 20 0;">
+
+            <Text fx:id="pageTitle" text="입실/퇴실"> 
+                <font>
+                    <Font size="40.0" />
+                </font>
+            </Text>
+        </VBox>
+        
+        <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-background-color: #e0e0e0; -fx-padding: 10;">
+            <ComboBox fx:id="floorComboBox" prefWidth="150" prefHeight="50" style="-fx-font-size: 18px;">
+            </ComboBox>
+            <ComboBox fx:id="seatTypeComboBox" prefWidth="150" prefHeight="50" style="-fx-font-size: 18px;">
+            </ComboBox>
+            
+            <Button text="ENTER" onAction="#handleSeatEnter" style="-fx-font-size: 18px; -fx-min-width: 150; -fx-max-width: 150; -fx-min-height: 50; -fx-max-height: 50; -fx-background-color: #007bff; -fx-text-fill: white; -fx-padding: 5 15;"/>
+            
+            <Region HBox.hgrow="ALWAYS"/>
+            <Text fx:id="currentTimeText" text="00:00:00" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-fill: #333;"/>
+            
+        </HBox>
+
+        <StackPane VBox.vgrow="ALWAYS" style="-fx-font-size: 30px; -fx-background-color: #ffffff; -fx-padding: 30; -fx-border-color: #cccccc; -fx-border-width: 1px;">
+            
+            <GridPane alignment="CENTER" hgap="20" vgap="20" fx:id="seatGrid">
+                
+                <HBox GridPane.rowIndex="0" GridPane.columnIndex="0" GridPane.columnSpan="4" alignment="CENTER" style="-fx-background-color: #e0e0e0; -fx-min-height: 50; -fx-max-width: 1100;"/>
+
+                <HBox GridPane.rowIndex="1" GridPane.columnIndex="0" spacing="10" alignment="CENTER">
+                    <Button text="01" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                    <Button text="02" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                    <Button text="03" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                    <Button text="04" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                    <Button text="05" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                    <Button text="06" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                    <Button text="07" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                    <Button text="08" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                    <Button text="09" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                    <Button text="10" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                </HBox>
+
+                
+                <HBox GridPane.rowIndex="2" GridPane.columnIndex="0" spacing="10" alignment="CENTER">
+
+                    <VBox spacing="10" alignment="CENTER" style="-fx-padding: 70 40 0 0;">
+                        <HBox spacing="10">
+                            <Button text="11" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                            <Button text="12" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                        </HBox>
+                        <Region style="-fx-background-color: #e0e0e0; -fx-min-height: 50; -fx-min-width: 100;"/>
+                    </VBox>
+
+                    <VBox spacing="10" alignment="CENTER" style="-fx-padding: 70 40 0 40;">
+                        <HBox spacing="10">
+                            <Button text="15" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                            <Button text="16" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                        </HBox>
+                        <Region style="-fx-background-color: #e0e0e0; -fx-min-height: 50; -fx-min-width: 180;"/>
+                    </VBox>
+
+                    <VBox spacing="10" alignment="CENTER" style="-fx-padding: 70 0 0 40;">
+                        <HBox spacing="10">
+                            <Button text="19" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                            <Button text="20" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                        </HBox>
+                        <Region style="-fx-background-color: #e0e0e0; -fx-min-height: 50; -fx-min-width: 100;"/>
+                    </VBox>
+                </HBox>
+
+                <HBox GridPane.rowIndex="3" GridPane.columnIndex="0" spacing="10" alignment="CENTER" style="-fx-padding: 0 0 0 0;">
+                    
+                    <HBox spacing="10" style="-fx-padding: 0 40 0 0;">
+                        <Button text="13" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                        <Button text="14" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                    </HBox>
+                    
+                    <HBox spacing="10" style="-fx-padding: 0 40;">
+                        <Button text="17" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                        <Button text="18" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                    </HBox>
+
+                    <HBox spacing="10" style="-fx-padding: 0 0 0 40;">
+                        <Button text="21" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                        <Button text="22" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                    </HBox>
+
+                </HBox>
+            </GridPane>
+            
+        </StackPane>
+
+        <HBox alignment="BOTTOM_LEFT" style="-fx-background-color: white; -fx-padding: 7;">
+     <Button onAction="#handleGoHome" style="-fx-font-size: 20px; -fx-background-color: transparent; -fx-text-fill: Black;" text="🏠 홈으로 돌아가기"/>
+</HBox>
+        
+    </VBox>
+</AnchorPane>

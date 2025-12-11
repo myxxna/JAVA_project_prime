@@ -1,48 +1,77 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.text.Font?>
 <?import javafx.scene.text.Text?>
-<?import controller.kiosk.SeatController?>
 
 <AnchorPane xmlns="http://javafx.com/javafx/17" 
             xmlns:fx="http://javafx.com/fxml/1" 
-            fx:controller="controller.kiosk.SeatController"
+            fx:controller="controller.kiosk.ExtendController"
+            style="-fx-background-color: #f4f4f4;">
+
+    <VBox spacing="0" alignment="TOP_CENTER" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        
+        <VBox alignment="CENTER" spacing="10" style="-fx-padding: 20 0 20 0;">
+            <Text text="이용 연장 / 퇴실">
+                <font>
+                    <Font size="40.0" />
+                </font>
+            </Text>
+        </VBox>
+        
+        <HBox style="-fx-background-color: #e0e0e0; -fx-min-height: 2;" />
+
+        <StackPane VBox.vgrow="ALWAYS" style="-fx-background-color: #ffffff; -fx-padding: 30;">
             
-            style="-fx-border-color: #607d8b; -fx-border-width: 2px; -fx-padding: 15;">
+            <HBox alignment="CENTER" spacing="50">
+                
+                <VBox alignment="CENTER" spacing="30" 
+                      style="-fx-border-color: #ccc; -fx-border-width: 2; -fx-border-radius: 20; -fx-padding: 30; -fx-min-width: 350;">
+                    
+                    <Text text="현재 이용 중인 좌석" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-fill: #333;"/>
+                    
+                    <VBox spacing="10" alignment="CENTER">
+                        <Text fx:id="seatInfoText" text="좌석 정보 로딩중..." style="-fx-font-size: 24px; -fx-fill: #555;"/>
+                        <HBox spacing="10" alignment="CENTER">
+                            <Text text="남은 시간:" style="-fx-font-size: 24px; -fx-fill: #555;"/>
+                            <Text fx:id="remainTimeText" text="00:00:00" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-fill: #e74c3c;"/>
+                        </HBox>
+                        <Text fx:id="totalTimeText" text="총 이용 시간: 0분" style="-fx-font-size: 18px; -fx-fill: #888;"/>
+                    </VBox>
+                    
+                    <Button text="퇴실하기" onAction="#handleCheckOut" 
+                            style="-fx-font-size: 22px; -fx-min-width: 200; -fx-min-height: 60; -fx-background-color: #dc3545; -fx-text-fill: white; -fx-background-radius: 10; -fx-cursor: hand;"/>
+                </VBox>
 
-    <VBox layoutX="15.0" layoutY="15.0" spacing="10" AnchorPane.bottomAnchor="15.0" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="15.0">
-        
-        <HBox spacing="20">
-            <Label text="선택 좌석:"/>
-            <Text fx:id="selectedSeatNumber" text="선택 전" style="-fx-font-weight: bold;"/>
-            <Region HBox.hgrow="ALWAYS"/>
-            <Label text="남은 시간:"/>
-            <Text fx:id="remainingTimeText" text="00:00:00" style="-fx-font-size: 18px; -fx-fill: #e57373; -fx-font-weight: bold;"/>
-        </HBox>
+                <VBox alignment="CENTER_LEFT" spacing="20">
+                    <Text text="연장할 시간을 선택하세요" style="-fx-font-size: 30px; -fx-font-weight: bold;"/>
+                    <Text text="※ 총 이용 시간은 3시간을 초과할 수 없습니다." style="-fx-font-size: 16px; -fx-fill: #666;"/>
+                    
+                    <GridPane hgap="20" vgap="20">
+                        <Button text="30분" onAction="#handleExtend30" GridPane.columnIndex="0" GridPane.rowIndex="0"
+                                style="-fx-font-size: 20px; -fx-pref-width: 140; -fx-pref-height: 70; -fx-background-color: white; -fx-border-color: #333; -fx-border-width: 2; -fx-border-radius: 10; -fx-background-radius: 10;"/>
+                        
+                        <Button text="60분" onAction="#handleExtend60" GridPane.columnIndex="1" GridPane.rowIndex="0"
+                                style="-fx-font-size: 20px; -fx-pref-width: 140; -fx-pref-height: 70; -fx-background-color: white; -fx-border-color: #333; -fx-border-width: 2; -fx-border-radius: 10; -fx-background-radius: 10;"/>
+                                
+                        <Button text="90분" onAction="#handleExtend90" GridPane.columnIndex="0" GridPane.rowIndex="1"
+                                style="-fx-font-size: 20px; -fx-pref-width: 140; -fx-pref-height: 70; -fx-background-color: white; -fx-border-color: #333; -fx-border-width: 2; -fx-border-radius: 10; -fx-background-radius: 10;"/>
+                                
+                        <Button text="120분" onAction="#handleExtend120" GridPane.columnIndex="1" GridPane.rowIndex="1"
+                                style="-fx-font-size: 20px; -fx-pref-width: 140; -fx-pref-height: 70; -fx-background-color: white; -fx-border-color: #333; -fx-border-width: 2; -fx-border-radius: 10; -fx-background-radius: 10;"/>
+                    </GridPane>
+                </VBox>
+                
+            </HBox>
+        </StackPane>
 
-        <Separator/>
-
-        <GridPane fx:id="seatGrid" alignment="CENTER" hgap="10" vgap="10" VBox.vgrow="ALWAYS">
-            </GridPane>
-
-        <Separator/>
-        
-        <HBox alignment="CENTER" spacing="10">
-            <Button fx:id="reserveButton" text="좌석 예약" onAction="#handleReservation" style="-fx-background-color: #ffb74d; -fx-text-fill: white; -fx-min-width: 120;"/>
-            <Button fx:id="checkInButton" text="입실하기" onAction="#handleCheckIn" disable="true" style="-fx-background-color: #81c784; -fx-text-fill: white; -fx-min-width: 100;"/>
-            <Button fx:id="extendButton" text="30분 연장" onAction="#handleExtension" disable="true" style="-fx-background-color: #4db6ac; -fx-text-fill: white; -fx-min-width: 100;"/>
-            <Button fx:id="extend60Button" text="60분 연장" onAction="#handleExtension60" disable="true" style="-fx-background-color: #4db6ac; -fx-text-fill: white; -fx-min-width: 100;"/>
-            <Button fx:id="checkOutButton" text="퇴실하기" onAction="#handleCheckOut" disable="true" style="-fx-background-color: #e57373; -fx-text-fill: white; -fx-min-width: 100;"/>
-        </HBox>
-        
-        <Separator/>
-
-        <HBox alignment="CENTER_LEFT" spacing="15">
-            <Label text="범례:" style="-fx-font-weight: bold;"/>
-            <Label text="사용 중" style="-fx-text-fill: #e57373; -fx-font-weight: bold;"/>
-            <Label text="예약 대기" style="-fx-text-fill: #ffb74d; -fx-font-weight: bold;"/>
-            <Label text="사용 가능" style="-fx-text-fill: #81c784; -fx-font-weight: bold;"/>
+        <HBox alignment="BOTTOM_LEFT" style="-fx-background-color: white; -fx-padding: 20;">
+             <Button onAction="#handleGoHome" style="-fx-font-size: 20px; -fx-background-color: transparent; -fx-text-fill: #333;" text="🏠 홈으로 돌아가기"/>
         </HBox>
         
     </VBox>
