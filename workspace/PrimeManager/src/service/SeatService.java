@@ -4,7 +4,11 @@ import impl.SeatDAOImpl;
 import model.Seat;
 import java.time.LocalDateTime;
 import java.util.List;
-
+import config.DBConnection;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.List;
 public class SeatService {
     
     // DAO 인스턴스 생성
@@ -83,5 +87,26 @@ public class SeatService {
 
         // 3. DB 업데이트 실행
         return seatDAO.updateSeatStatus(seat);
+    }
+    /**
+     * [추가] 좌석 이용 시간 연장
+     */
+    public boolean extendTime(int seatId, int addMinutes) {
+        // 종료 시간(end_time)을 현재 설정된 시간에서 addMinutes만큼 더함
+        String sql = "UPDATE seats SET end_time = DATE_ADD(end_time, INTERVAL ? MINUTE) WHERE seat_index = ?";
+
+        try (Connection conn = config.DBConnection.getConnection(); // 또는 config.DBConnection
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, addMinutes);
+            pstmt.setInt(2, seatId);
+
+            int result = pstmt.executeUpdate();
+            return result > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 }
