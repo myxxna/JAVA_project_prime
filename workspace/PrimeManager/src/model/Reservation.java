@@ -3,46 +3,41 @@ package model;
 import java.time.LocalDateTime;
 
 public class Reservation {
-    
-    public enum ReservationStatus {
-        PENDING, IN_USE, FINISHED, CANCELED
-    }
-    
-    private long reservationId;
-    private String userId;
+
+    private int id;
+    private int userId;
     private int seatId;
-    private LocalDateTime startTime;
-    private LocalDateTime expectedEndTime;
-    private LocalDateTime actualEndTime; 
-    private int durationMinutes;
-    private int initialDurationMinutes;
-    private ReservationStatus status;
-
-    public Reservation(String userId, int seatId, LocalDateTime startTime, int durationMinutes) {
-        this.userId = userId;
-        this.seatId = seatId;
-        this.startTime = startTime;
-        this.durationMinutes = durationMinutes;
-        this.initialDurationMinutes = durationMinutes; 
-        this.expectedEndTime = startTime.plusMinutes(durationMinutes);
-        this.status = ReservationStatus.PENDING; 
-    }
+    private LocalDateTime reservationTime;
+    private String status;
+    private LocalDateTime createdAt;
     
-    // Getter 및 Setter (생략된 부분 포함)
+    // ★ 추가된 필드: 에러 해결을 위해 추가 (DB에는 저장되지 않더라도 로직상 필요)
+    private int durationMinutes; 
 
-    public long getReservationId() { return reservationId; }
-    public void setReservationId(long reservationId) { this.reservationId = reservationId; }
-    public String getUserId() { return userId; }
+    public Reservation() {
+    }
+
+    // Getters and Setters
+
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+
+    public int getUserId() { return userId; }
+    public void setUserId(int userId) { this.userId = userId; }
+
     public int getSeatId() { return seatId; }
-    public LocalDateTime getStartTime() { return startTime; }
-    public LocalDateTime getExpectedEndTime() { return expectedEndTime; }
-    public void setExpectedEndTime(LocalDateTime expectedEndTime) { this.expectedEndTime = expectedEndTime; }
+    public void setSeatId(int seatId) { this.seatId = seatId; }
+
+    public LocalDateTime getReservationTime() { return reservationTime; }
+    public void setReservationTime(LocalDateTime reservationTime) { this.reservationTime = reservationTime; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    // ★ 추가된 메서드 (이게 없어서 빨간줄 에러가 났던 것입니다)
     public int getDurationMinutes() { return durationMinutes; }
     public void setDurationMinutes(int durationMinutes) { this.durationMinutes = durationMinutes; }
-    public int getInitialDurationMinutes() { return initialDurationMinutes; }
-    public void setInitialDurationMinutes(int initialDurationMinutes) { this.initialDurationMinutes = initialDurationMinutes; }
-    public ReservationStatus getStatus() { return status; }
-    public void setStatus(ReservationStatus status) { this.status = status; }
-    public LocalDateTime getActualEndTime() { return actualEndTime; }
-    public void setActualEndTime(LocalDateTime actualEndTime) { this.actualEndTime = actualEndTime; }
 }
