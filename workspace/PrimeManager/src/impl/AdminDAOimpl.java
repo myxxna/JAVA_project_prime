@@ -171,19 +171,36 @@ public class AdminDAOimpl {
     
     // 4. 예약자 확인
     public List<String> getSeatReservations(int seatId) {
-        List<String> list = new ArrayList<>();
-        String sql = "SELECT u.name, u.st_id, r.reservation_time FROM reservations r JOIN users u ON r.user_id = u.id WHERE r.seat_id = ? AND r.status = 'PENDING'";
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, seatId);
+        List<String> reservations = new ArrayList<>();
+        
+        // SQL: Column name 'start_time' is changed to 'reservation_time'
+        String sql = "SELECT u.name, r.reservation_time FROM reservations r " + // ★ SELECT 컬럼 이름 수정
+                     "JOIN users u ON r.user_id = u.id " +
+                     "WHERE r.seat_id = ? AND r.status = 'R' " + 
+                     "ORDER BY r.reservation_time ASC"; // ★ ORDER BY 컬럼 이름 수정
+
+        try (Connection conn = DBConnection.getConnection(); 
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setInt(1, seatId); 
+            
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
-                    String timeStr = rs.getString("reservation_time");
-                    String time = (timeStr != null && timeStr.length() > 16) ? timeStr.substring(11, 16) : timeStr;
-                    list.add(rs.getString("name") + " (" + rs.getInt("st_id") + ") - " + time);
+                    String name = rs.getString("name");
+                    
+                    // 2. ResultSet에서 'reservation_time' 컬럼의 데이터를 읽음
+                    LocalDateTime startTime = rs.getObject("reservation_time", LocalDateTime.class); // ★ 컬럼 이름 수정
+                    String timeStr = startTime.format(DateTimeFormatter.ofPattern("HH:mm"));
+                    
+                    // 3. Controller로 전달할 포맷된 문자열 생성
+                    reservations.add(name + " (예정: " + timeStr + ")"); 
                 }
             }
-        } catch (SQLException e) { e.printStackTrace(); }
-        return list;
+        } catch (SQLException e) {
+            System.err.println("SQL 오류 발생 - getSeatReservations: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return reservations; 
     }
 
     // 5. 층 목록

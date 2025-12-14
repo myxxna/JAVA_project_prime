@@ -603,7 +603,7 @@ public class AdminController {
             userLabel.setStyle("-fx-text-fill: white;");
             userLabel.setText(nameValue != null ? nameValue : "사용중"); 
         } else if ("M".equals(status)) {
-            seatPane.setStyle(commonStyle + COLOR_GRAY);
+            seatPane.setStyle(commonStyle + COLOR_RED);
             seatLabel.setStyle("-fx-text-fill: #666666;");
             userLabel.setText("점검중");
         } else if ("R".equals(status) || isReservedSoon) {
