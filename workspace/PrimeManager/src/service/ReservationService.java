@@ -1,27 +1,43 @@
 package service;
 
 import impl.ReservationDAOImpl;
+import interfaces.IReservationDAO;
 import model.Reservation;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ReservationService {
+    
+    // 인터페이스 타입 사용 권장
+    private final IReservationDAO reservationDAO = new ReservationDAOImpl();
 
-    private ReservationDAOImpl reservationDAO = new ReservationDAOImpl();
-
-    // 예약 처리 메서드
     public boolean makeReservation(int userId, int seatId, LocalDateTime startTime, int durationHours) {
-        
-        // 1. 예약 객체 생성
         Reservation reservation = new Reservation();
         reservation.setUserId(userId);
         reservation.setSeatId(seatId);
-        reservation.setReservationTime(startTime); // 입실 시간
-        reservation.setDurationMinutes(durationHours * 60); // 시간 -> 분 변환
-        reservation.setStatus("R"); // ★ 요청하신 대로 Status 'R' 설정
+        reservation.setReservationTime(LocalDateTime.now()); 
+        reservation.setCreatedAt(startTime);                 
+        reservation.setUsingTime(durationHours);             
+        reservation.setStatus("R"); 
 
-        // 2. DAO를 통해 DB에 저장
-        // (심화 기능: 여기서 해당 시간에 이미 예약이 있는지 체크하는 로직 추가 가능)
-        
-        return reservationDAO.insertReservation(reservation);
+        return reservationDAO.createReservation(reservation).isPresent();
+    }
+
+    // [추가됨] Controller에서 호출하는 메서드
+    public List<Integer> getReservedHours(int seatId) {
+        List<Reservation> reservations = reservationDAO.getFutureReservationsBySeatId(seatId);
+        List<Integer> blockedHours = new ArrayList<>();
+
+        for (Reservation res : reservations) {
+            if (res.getCreatedAt() != null) {
+                int startHour = res.getCreatedAt().getHour();
+                int duration = res.getUsingTime();
+                for (int i = 0; i < duration; i++) {
+                    blockedHours.add(startHour + i);
+                }
+            }
+        }
+        return blockedHours;
     }
 }

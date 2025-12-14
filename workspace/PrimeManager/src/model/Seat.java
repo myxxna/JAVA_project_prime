@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 public class Seat {
 
     private int id;                     // DB column: id (INT)
-    private Integer currentUserId;      // DB column: current_user_id (INT) - NULL 가능하므로 Integer 사용
+    private int currentUserId;      // DB column: current_user_id (INT) - NULL 가능하므로 Integer 사용
     private String currentUserName;     // DB column: current_user_name (VARCHAR)
     private int floor;                  // DB column: floor (INT)
     private String roomIndex;           // DB column: room_index (VARCHAR) - 기존 roomNumber 대체 가능성 큼
@@ -34,8 +34,8 @@ public class Seat {
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
 
-    public Integer getCurrentUserId() { return currentUserId; }
-    public void setCurrentUserId(Integer currentUserId) { this.currentUserId = currentUserId; }
+    public int getCurrentUserId() { return currentUserId; }
+    public void setCurrentUserId(int currentUserId) { this.currentUserId = currentUserId; }
 
     public String getCurrentUserName() { return currentUserName; }
     public void setCurrentUserName(String currentUserName) { this.currentUserName = currentUserName; }

@@ -25,7 +25,7 @@ public class ExtendService {
         if (seat == null) return false;
 
         // 퇴실 시 정보 초기화
-        seat.setCurrentUserId(null);
+        seat.setCurrentUserId(0);
         seat.setCurrentUserName(null);
         seat.setStatus("Available"); // 빈 좌석 상태로 변경
         seat.setStartTime(null);

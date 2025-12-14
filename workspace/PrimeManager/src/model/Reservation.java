@@ -7,18 +7,18 @@ public class Reservation {
     private int id;
     private int userId;
     private int seatId;
-    private LocalDateTime reservationTime;
-    private String status;
-    private LocalDateTime createdAt;
+    private LocalDateTime reservationTime; // 예약 시각
+    private String status;                 // 상태 (R:예약, I:입실 등)
+    private LocalDateTime createdAt;       // 입실 예정 시간
+    private int usingTime;                 // 이용 시간 (시간 단위)
     
-    // ★ 추가된 필드: 에러 해결을 위해 추가 (DB에는 저장되지 않더라도 로직상 필요)
-    private int durationMinutes; 
+    // [추가] 비즈니스 로직용 필드 (DB 컬럼 아님, 계산용)
+    private LocalDateTime expectedEndTime; 
 
     public Reservation() {
     }
 
-    // Getters and Setters
-
+    // Getters & Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
 
@@ -37,7 +37,10 @@ public class Reservation {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    // ★ 추가된 메서드 (이게 없어서 빨간줄 에러가 났던 것입니다)
-    public int getDurationMinutes() { return durationMinutes; }
-    public void setDurationMinutes(int durationMinutes) { this.durationMinutes = durationMinutes; }
+    public int getUsingTime() { return usingTime; }
+    public void setUsingTime(int usingTime) { this.usingTime = usingTime; }
+
+    // [추가됨] 오류 해결용 Getter/Setter
+    public LocalDateTime getExpectedEndTime() { return expectedEndTime; }
+    public void setExpectedEndTime(LocalDateTime expectedEndTime) { this.expectedEndTime = expectedEndTime; }
 }

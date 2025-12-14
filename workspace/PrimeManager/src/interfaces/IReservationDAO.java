@@ -3,18 +3,25 @@ package interfaces;
 import model.Reservation;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
 public interface IReservationDAO {
-    boolean createReservation(Reservation reservation);
-    Reservation findActiveReservationByUserId(String userId);
-    boolean updateStatusToInUse(String userId);
-    boolean cancelReservation(String userId);
-    Reservation findActiveReservationBySeatId(int seatId);
+    
+    // 예약 생성 (createReservation으로 통일)
+    Optional<Integer> createReservation(Reservation reservation);
 
-    boolean updateExpectedEndTime(long reservationId, LocalDateTime newEndTime, int minutesToAdd);
+    // 조회 메서드들
+    Optional<Reservation> findActiveReservationBySeatId(int seatId);
+    Optional<Reservation> findActiveReservationByUserId(int userId);
+    
+    // 특정 좌석의 미래 예약 조회 (예약 차단용)
+    List<Reservation> getFutureReservationsBySeatId(int seatId);
 
-    boolean finishReservation(long reservationId, LocalDateTime actualEndTime);
+    // 상태 변경
+    void updateStatusToInUse(int reservationId);
+    void cancelReservation(int reservationId);
+    void finishReservation(int reservationId, LocalDateTime actualEndTime); 
 
-    Map<Integer, Reservation> getAllActiveSeatReservations();
+    // 전체 조회
+    List<Reservation> getAllActiveReservations(); 
 }

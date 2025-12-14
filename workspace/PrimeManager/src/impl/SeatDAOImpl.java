@@ -1,149 +1,144 @@
 package impl;
 
+import config.DBConnection;
 import model.Seat;
-import config.DBConnection; // 👈 여기 변경됨 (DBUtil -> DBConnection)
-
 import java.sql.*;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SeatDAOImpl {
-
-    // 1. 모든 좌석 조회
+public class SeatDAOImpl { 
+    
     public List<Seat> getAllSeats() {
-        List<Seat> seatList = new ArrayList<>();
-        String sql = "SELECT * FROM seats ORDER BY floor, seat_number";
-
-        // 👈 DBConnection.getConnection()으로 변경됨
-        try (Connection conn = DBConnection.getConnection(); 
+        List<Seat> list = new ArrayList<>();
+        String sql = "SELECT * FROM seats";
+        try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {
-
-            while (rs.next()) {
-                seatList.add(mapRowToSeat(rs));
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return seatList;
+            while (rs.next()) list.add(mapResultSetToSeat(rs));
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
     }
 
-    // 2. ID로 좌석 조회
-    public Seat getSeatById(int id) {
-        String sql = "SELECT * FROM seats WHERE id = ?";
-        Seat seat = null;
-
-        try (Connection conn = DBConnection.getConnection(); // 👈 변경됨
+    public Seat getSeatById(int seatId) {
+        String sql = "SELECT * FROM seats WHERE seat_index = ?";
+        try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setInt(1, id);
-
+            pstmt.setInt(1, seatId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) return mapResultSetToSeat(rs);
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return null; 
+    }
+    
+    public Seat getSeatBySeatNumber(String seatNumber) {
+        String sql = "SELECT * FROM seats WHERE seat_number = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setString(1, seatNumber);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    seat = mapRowToSeat(rs);
+                    return mapResultSetToSeat(rs);
+                } else {
+                    System.out.println("❌ DB 조회 실패: 버튼 값('" + seatNumber + "')과 일치하는 seat_number가 DB에 없습니다.");
                 }
             }
-
         } catch (SQLException e) {
             e.printStackTrace();
+            System.out.println("🔥 DB 에러: " + e.getMessage());
         }
-        return seat;
+        return null;
     }
 
-    // 3. 사용자 ID로 좌석 조회
+    public int getSeatIdBySeatNumber(String seatNumber) {
+        String sql = "SELECT seat_index FROM seats WHERE seat_number = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, seatNumber);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) return rs.getInt("seat_index");
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return 0;
+    }
+
     public Seat getSeatByUserId(int userId) {
         String sql = "SELECT * FROM seats WHERE current_user_id = ?";
-        Seat seat = null;
-
-        try (Connection conn = DBConnection.getConnection(); // 👈 변경됨
+        try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
             pstmt.setInt(1, userId);
-
             try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    seat = mapRowToSeat(rs);
-                }
+                if (rs.next()) return mapResultSetToSeat(rs);
             }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return seat;
+        } catch (SQLException e) { e.printStackTrace(); }
+        return null; 
     }
 
-    // 4. 좌석 상태 업데이트
     public boolean updateSeatStatus(Seat seat) {
-        String sql = "UPDATE seats SET " +
-                     "current_user_id = ?, " +
-                     "current_user_name = ?, " +
-                     "status = ?, " +
-                     "start_time = ?, " +
-                     "end_time = ? " +
-                     "WHERE id = ?";
-
-        try (Connection conn = DBConnection.getConnection(); // 👈 변경됨
+        // [수정] current_use -> current_user_name 으로 변경
+        String sql = "UPDATE seats SET current_user_name = ?, current_user_id = ?, status = ?, start_time = ?, end_time = ? WHERE seat_index = ?";
+        try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            if (seat.getCurrentUserId() == null) {
-                pstmt.setNull(1, Types.INTEGER);
-            } else {
-                pstmt.setInt(1, seat.getCurrentUserId());
-            }
-
-            pstmt.setString(2, seat.getCurrentUserName());
+            pstmt.setString(1, seat.getCurrentUserName()); 
+            
+            if (seat.getCurrentUserId() == 0) pstmt.setNull(2, java.sql.Types.INTEGER);
+            else pstmt.setInt(2, seat.getCurrentUserId());
+            
             pstmt.setString(3, seat.getStatus());
+            
+            if (seat.getStartTime() != null) pstmt.setTimestamp(4, Timestamp.valueOf(seat.getStartTime()));
+            else pstmt.setNull(4, java.sql.Types.TIMESTAMP);
 
-            if (seat.getStartTime() != null) {
-                pstmt.setTimestamp(4, Timestamp.valueOf(seat.getStartTime()));
-            } else {
-                pstmt.setNull(4, Types.TIMESTAMP);
-            }
+            if (seat.getEndTime() != null) pstmt.setTimestamp(5, Timestamp.valueOf(seat.getEndTime()));
+            else pstmt.setNull(5, java.sql.Types.TIMESTAMP);
+            
+            pstmt.setInt(6, seat.getSeatIndex()); 
 
-            if (seat.getEndTime() != null) {
-                pstmt.setTimestamp(5, Timestamp.valueOf(seat.getEndTime()));
-            } else {
-                pstmt.setNull(5, Types.TIMESTAMP);
-            }
-
-            pstmt.setInt(6, seat.getId());
-
-            int affectedRows = pstmt.executeUpdate();
-            return affectedRows > 0;
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) { e.printStackTrace(); return false; }
+    }
+    
+    public boolean extendTime(int seatId, int addMinutes) {
+        String sql = "UPDATE seats SET end_time = DATE_ADD(end_time, INTERVAL ? MINUTE) WHERE seat_index = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, addMinutes);
+            pstmt.setInt(2, seatId);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) { e.printStackTrace(); return false; }
     }
 
-    // [헬퍼 메서드] ResultSet -> Seat 변환
-    private Seat mapRowToSeat(ResultSet rs) throws SQLException {
+    private Seat mapResultSetToSeat(ResultSet rs) throws SQLException {
         Seat seat = new Seat();
-        seat.setId(rs.getInt("id"));
-        seat.setFloor(rs.getInt("floor"));
-        seat.setSeatNumber(rs.getString("seat_number"));
+        try { seat.setId(rs.getInt("id")); } catch (SQLException e) {} 
         seat.setSeatIndex(rs.getInt("seat_index"));
-        seat.setRoomNumber(rs.getString("room_index"));
-        seat.setStatus(rs.getString("status"));
+        seat.setSeatNumber(rs.getString("seat_number"));
+        seat.setFloor(rs.getInt("floor"));
+        
+        String status = rs.getString("status");
+        if (status != null) seat.setStatus(status.trim());
+        else seat.setStatus("A"); 
         
         int userId = rs.getInt("current_user_id");
-        if (rs.wasNull()) {
-            seat.setCurrentUserId(null);
-        } else {
-            seat.setCurrentUserId(userId);
+        if (rs.wasNull()) seat.setCurrentUserId(0);
+        else seat.setCurrentUserId(userId);
+        
+        // [수정] current_use -> current_user_name 으로 변경
+        // 만약 DB 컬럼명이 user_name 이라면 "user_name"으로 바꾸셔야 합니다.
+        try {
+            seat.setCurrentUserName(rs.getString("current_user_name")); 
+        } catch (SQLException e) {
+            // 혹시 몰라 예외처리: 컬럼명이 다를 경우 null 처리
+            System.out.println("⚠️ 컬럼 이름 확인 필요: current_user_name이 아닐 수 있음");
         }
         
-        seat.setCurrentUserName(rs.getString("current_user_name"));
-
         Timestamp startTs = rs.getTimestamp("start_time");
         if (startTs != null) seat.setStartTime(startTs.toLocalDateTime());
-
         Timestamp endTs = rs.getTimestamp("end_time");
         if (endTs != null) seat.setEndTime(endTs.toLocalDateTime());
-
+        
         return seat;
     }
 }
