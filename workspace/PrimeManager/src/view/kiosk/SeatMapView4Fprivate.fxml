@@ -39,19 +39,19 @@
             
             <GridPane alignment="CENTER" hgap="20" vgap="20" fx:id="seatGrid">
                 
-                <HBox GridPane.rowIndex="0" GridPane.columnIndex="0" GridPane.columnSpan="4" alignment="CENTER" style="-fx-background-color: #e0e0e0; -fx-min-height: 50; -fx-max-width: 1100;"/>
+                <HBox GridPane.rowIndex="0" GridPane.columnIndex="0" GridPane.columnSpan="4" alignment="CENTER" style="-fx-background-color: #e0e0e0; -fx-min-height: 50; -fx-max-width: 1050;"/>
 
                 <HBox GridPane.rowIndex="1" GridPane.columnIndex="0" spacing="10" alignment="CENTER">
-                    <Button text="01" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
-                    <Button text="02" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
-                    <Button text="03" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
-                    <Button text="04" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
-                    <Button text="05" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
-                    <Button text="06" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
-                    <Button text="07" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
-                    <Button text="08" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
-                    <Button text="09" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
-                    <Button text="10" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                    <Button text="A01" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                    <Button text="A02" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                    <Button text="A03" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                    <Button text="A04" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                    <Button text="A05" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                    <Button text="A06" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                    <Button text="A07" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                    <Button text="A08" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                    <Button text="A09" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                    <Button text="A10" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
                 </HBox>
 
                 
@@ -59,24 +59,24 @@
 
                     <VBox spacing="10" alignment="CENTER" style="-fx-padding: 70 40 0 0;">
                         <HBox spacing="10">
-                            <Button text="11" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
-                            <Button text="12" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                            <Button text="A11" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                            <Button text="A12" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
                         </HBox>
                         <Region style="-fx-background-color: #e0e0e0; -fx-min-height: 50; -fx-min-width: 100;"/>
                     </VBox>
 
                     <VBox spacing="10" alignment="CENTER" style="-fx-padding: 70 40 0 40;">
                         <HBox spacing="10">
-                            <Button text="15" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
-                            <Button text="16" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                            <Button text="A15" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                            <Button text="A16" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
                         </HBox>
                         <Region style="-fx-background-color: #e0e0e0; -fx-min-height: 50; -fx-min-width: 180;"/>
                     </VBox>
 
                     <VBox spacing="10" alignment="CENTER" style="-fx-padding: 70 0 0 40;">
                         <HBox spacing="10">
-                            <Button text="19" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
-                            <Button text="20" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                            <Button text="A19" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                            <Button text="A20" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
                         </HBox>
                         <Region style="-fx-background-color: #e0e0e0; -fx-min-height: 50; -fx-min-width: 100;"/>
                     </VBox>
@@ -85,18 +85,18 @@
                 <HBox GridPane.rowIndex="3" GridPane.columnIndex="0" spacing="10" alignment="CENTER" style="-fx-padding: 0 0 0 0;">
                     
                     <HBox spacing="10" style="-fx-padding: 0 40 0 0;">
-                        <Button text="13" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
-                        <Button text="14" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                        <Button text="A13" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                        <Button text="A14" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
                     </HBox>
                     
                     <HBox spacing="10" style="-fx-padding: 0 40;">
-                        <Button text="17" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
-                        <Button text="18" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                        <Button text="A17" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                        <Button text="A18" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
                     </HBox>
 
                     <HBox spacing="10" style="-fx-padding: 0 0 0 40;">
-                        <Button text="21" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
-                        <Button text="22" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                        <Button text="A21" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
+                        <Button text="A22" onAction="#handleSeatSelection" style="-fx-font-size: 30px; -fx-min-width: 100; -fx-max-width: 100; -fx-min-height: 70; -fx-max-height: 70; -fx-background-color: white; -fx-border-color: #cccccc; -fx-border-width: 1px; -fx-font-weight: bold;"/>
                     </HBox>
 
                 </HBox>
